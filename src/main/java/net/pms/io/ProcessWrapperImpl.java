@@ -185,16 +185,7 @@ public class ProcessWrapperImpl extends Thread implements ProcessWrapper {
 			// separate stdout and stderr and can merge them by uncommenting the
 			// following line:
 			// pb.redirectErrorStream(true);
-			try {
-				process = pb.start();
-			}
-			catch (IOException e) {
-				LOGGER.warn("cannot start process", e);
-				if (params.getWorkDir() == null) {
-					LOGGER.trace("most likely working directory is not set.");
-				}
-				return;
-			}
+			process = pb.start();
 			PMS.get().currentProcesses.add(process);
 
 			if (stderrConsumer == null) {
@@ -366,15 +357,10 @@ public class ProcessWrapperImpl extends Thread implements ProcessWrapper {
 	@Override
 	public List<String> getResults() {
 		try {
-			if (stderrConsumer != null) {
-				stderrConsumer.join(1000);
-			}
+			stderrConsumer.join(1000);
 		} catch (InterruptedException e) {
 		}
-		if (stderrConsumer != null) {
-			return stderrConsumer.getResults();
-		}
-		return new ArrayList<String>();
+		return stderrConsumer.getResults();
 	}
 
 	@Override
