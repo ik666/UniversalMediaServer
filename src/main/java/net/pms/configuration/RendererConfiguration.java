@@ -621,7 +621,7 @@ public class RendererConfiguration extends Renderer {
 		Optional<RendererConfiguration> rc = r.stream().findAny();
 		if (rc.isPresent()) {
 			if (r.size() > 1) {
-				LOGGER.warn("Multiple renderer at the same ip address. Picking random renderer.");
+				LOGGER.warn("Multiple renderer at the same ip address {}. Picking random renderer : {}", sa.toString(), rc.get().toString());
 			}
 			LOGGER.trace("Matched media renderer \"{}\" based on address {}", rc.get().getRendererName(), sa.getHostAddress());
 			return rc.get();
@@ -726,7 +726,7 @@ public class RendererConfiguration extends Renderer {
 				HashSet<RendererConfiguration> rendererAtIp = getRendererAtIp(ia);
 				for (RendererConfiguration rc : rendererAtIp) {
 					// Already seen, finish configuration if required
-					if (rc.getUUID().equals(r.getUUID())) {
+					if (rc == ref) {
 						r = (DeviceConfiguration) rc;
 						boolean higher = ref != null && ref.getLoadingPriority() > r.getLoadingPriority() && recognized;
 						if (!r.loaded || higher) {
