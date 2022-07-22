@@ -645,7 +645,7 @@ public class RendererConfiguration extends Renderer {
 		RendererConfiguration r = null;
 		RendererConfiguration ref = getRendererConfigurationByHeaders(sortedHeaders);
 		if (ref != null) {
-			boolean isNew = !ADDRESS_ASSOCIATION.containsKey(ia);
+			boolean isNew = !ADDRESS_ASSOCIATION.get(ia).contains(ref);
 			r = resolve(ia, ref);
 			if (r != null) {
 				LOGGER.trace(
