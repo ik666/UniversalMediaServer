@@ -17,6 +17,7 @@
  */
 package net.pms.database;
 
+import com.zaxxer.hikari.HikariDataSource;
 import java.awt.Component;
 import java.sql.*;
 import javax.swing.JOptionPane;
@@ -25,7 +26,6 @@ import net.pms.Messages;
 import net.pms.PMS;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import com.zaxxer.hikari.HikariDataSource;
 
 /**
  * This class provides methods for creating and maintaining the database where
@@ -98,12 +98,8 @@ public abstract class Database extends DatabaseHelper {
 		}
 		open();
 		switch (status) {
-			case OPENED:
-				onOpening(force);
-				break;
-			case OPENFAILED:
-				onOpeningFail(force);
-				break;
+			case OPENED -> onOpening(force);
+			case OPENFAILED -> onOpeningFail(force);
 		}
 	}
 
@@ -169,7 +165,11 @@ public abstract class Database extends DatabaseHelper {
 		}
 
 		if (embedded) {
-			DatabaseEmbedded.shutdown(ds);
+			try (Connection con = getConnection()) {
+				DatabaseEmbedded.shutdown(con);
+			} catch (SQLException ex) {
+				LOGGER.error("shutdown DB ", ex);
+			}
 		}
 		ds.close();
 		status = DatabaseStatus.CLOSED;
