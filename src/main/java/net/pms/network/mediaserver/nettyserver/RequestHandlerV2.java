@@ -128,16 +128,16 @@ public class RequestHandlerV2 extends SimpleChannelUpstreamHandler {
 			LOGGER.debug("Forcing streaming.");
 		}
 
-		if (renderer == null) {
-			// Attempt 2: try to recognize the renderer by its socket address from previous requests
-			renderer = RendererConfiguration.getRendererConfigurationBySocketAddress(ia);
-		}
-
 		// If the renderer exists but isn't marked as loaded it means it's unrecognized
 		// by upnp and we still need to attempt http recognition here.
 		if (renderer == null || !renderer.loaded) {
-			// Attempt 3: try to recognize the renderer by matching headers
+			// next attempt: try to recognize the renderer by matching headers
 			renderer = RendererConfiguration.getRendererConfigurationByHeaders(headers.entries(), ia);
+		}
+
+		if (renderer == null) {
+			// next attempt: try to recognize the renderer by its socket address from previous requests
+			renderer = RendererConfiguration.getRendererConfigurationBySocketAddress(ia);
 		}
 
 		if (renderer != null) {
