@@ -574,7 +574,6 @@ public class RendererConfiguration extends Renderer {
 			return false;
 		}
 
-		// FIXME: handle multiple clients with same ip properly, now newer overwrites older
 		getRendererAtIp(sa).add(this);
 		resetUpnpMode();
 
@@ -621,7 +620,7 @@ public class RendererConfiguration extends Renderer {
 		Optional<RendererConfiguration> rc = r.stream().findAny();
 		if (rc.isPresent()) {
 			if (r.size() > 1) {
-				LOGGER.warn("Multiple renderer at the same ip address {}. Picking random renderer : {}", sa.toString(), rc.get().toString());
+				LOGGER.trace("Multiple renderer at the same ip address {}. Picking random renderer : {}", sa.toString(), rc.get().toString());
 			}
 			LOGGER.trace("Matched media renderer \"{}\" based on address {}", rc.get().getRendererName(), sa.getHostAddress());
 			return rc.get();
