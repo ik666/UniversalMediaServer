@@ -51,7 +51,7 @@ public class RendererConfiguration extends Renderer {
 	private static final Logger LOGGER = LoggerFactory.getLogger(RendererConfiguration.class);
 
 	protected static final ArrayList<String> ALL_RENDERERS_NAMES = new ArrayList<>();
-	protected static final Map<InetAddress, RendererConfiguration> ADDRESS_ASSOCIATION = new HashMap<>();
+	protected static final Map<InetAddress, HashSet<RendererConfiguration>> ADDRESS_ASSOCIATION = new HashMap<>();
 
 	public static final String NOTRANSCODE = "_NOTRANSCODE_";
 	public static final File NOFILE = new File("NOFILE");
@@ -417,7 +417,10 @@ public class RendererConfiguration extends Renderer {
 	public static Collection<RendererConfiguration> getConnectedRenderersConfigurations() {
 		// We need to check both UPnP and http sides to ensure a complete list
 		HashSet<RendererConfiguration> renderers = new HashSet<>(UPNPHelper.getRenderers(UPNPHelper.ANY));
-		renderers.addAll(ADDRESS_ASSOCIATION.values());
+
+		for (HashSet<RendererConfiguration> rendererConfigurations : ADDRESS_ASSOCIATION.values()) {
+			renderers.addAll(rendererConfigurations);
+		}
 		// Ensure any remaining secondary common-ip renderers (which are no longer in address association) are added
 		renderers.addAll(PMS.get().getFoundRenderers());
 		return renderers;
@@ -572,13 +575,7 @@ public class RendererConfiguration extends Renderer {
 		}
 
 		// FIXME: handle multiple clients with same ip properly, now newer overwrites older
-
-		RendererConfiguration prev = ADDRESS_ASSOCIATION.put(sa, this);
-		if (prev != null) {
-			// We've displaced a previous renderer at this address, so
-			// check  if it's a ghost instance that should be deleted.
-			verify(prev);
-		}
+		getRendererAtIp(sa).add(this);
 		resetUpnpMode();
 
 		if (
@@ -596,25 +593,40 @@ public class RendererConfiguration extends Renderer {
 		return true;
 	}
 
+	private static HashSet<RendererConfiguration> getRendererAtIp(InetAddress sa) {
+		if (ADDRESS_ASSOCIATION.get(sa) == null) {
+			ADDRESS_ASSOCIATION.put(sa, new HashSet<RendererConfiguration>());
+		}
+		return ADDRESS_ASSOCIATION.get(sa);
+	}
+
 	public static void calculateAllSpeeds() {
-		for (Entry<InetAddress, RendererConfiguration> entry : ADDRESS_ASSOCIATION.entrySet()) {
+		for (Entry<InetAddress, HashSet<RendererConfiguration>> entry : ADDRESS_ASSOCIATION.entrySet()) {
 			InetAddress sa = entry.getKey();
 			if (sa.isLoopbackAddress() || sa.isAnyLocalAddress()) {
 				continue;
 			}
-			RendererConfiguration r = entry.getValue();
-			if (!r.isOffline()) {
-				SpeedStats.getSpeedInMBits(sa, r.getRendererName());
+			HashSet<RendererConfiguration> renderer = getRendererAtIp(sa);
+			Optional<RendererConfiguration> r = renderer.parallelStream().findAny();
+			if (r.isPresent()) {
+				if (!r.get().isOffline()) {
+					SpeedStats.getSpeedInMBits(sa, r.get().getRendererName());
+				}
 			}
 		}
 	}
 
 	public static RendererConfiguration getRendererConfigurationBySocketAddress(InetAddress sa) {
-		RendererConfiguration r = ADDRESS_ASSOCIATION.get(sa);
-		if (r != null) {
-			LOGGER.trace("Matched media renderer \"{}\" based on address {}", r.getRendererName(), sa.getHostAddress());
+		HashSet<RendererConfiguration> r = getRendererAtIp(sa);
+		Optional<RendererConfiguration> rc = r.stream().findAny();
+		if (rc.isPresent()) {
+			if (r.size() > 1) {
+				LOGGER.warn("Multiple renderer at the same ip address. Picking random renderer.");
+			}
+			LOGGER.trace("Matched media renderer \"{}\" based on address {}", rc.get().getRendererName(), sa.getHostAddress());
+			return rc.get();
 		}
-		return r;
+		return null;
 	}
 
 	/**
@@ -711,17 +723,22 @@ public class RendererConfiguration extends Renderer {
 		}
 		try {
 			if (ADDRESS_ASSOCIATION.containsKey(ia)) {
-				// Already seen, finish configuration if required
-				r = (DeviceConfiguration) ADDRESS_ASSOCIATION.get(ia);
-				boolean higher = ref != null && ref.getLoadingPriority() > r.getLoadingPriority() && recognized;
-				if (!r.loaded || higher) {
-					LOGGER.debug("Finishing configuration for {}", r);
-					if (higher) {
-						LOGGER.debug("Switching to higher priority renderer: {}", ref);
+				HashSet<RendererConfiguration> rendererAtIp = getRendererAtIp(ia);
+				for (RendererConfiguration rc : rendererAtIp) {
+					// Already seen, finish configuration if required
+					if (rc.getUUID().equals(r.getUUID())) {
+						r = (DeviceConfiguration) rc;
+						boolean higher = ref != null && ref.getLoadingPriority() > r.getLoadingPriority() && recognized;
+						if (!r.loaded || higher) {
+							LOGGER.debug("Finishing configuration for {}", r);
+							if (higher) {
+								LOGGER.debug("Switching to higher priority renderer: {}", ref);
+							}
+							r.inherit(ref);
+							// update gui
+							PMS.get().updateRenderer(r);
+						}
 					}
-					r.inherit(ref);
-					// update gui
-					PMS.get().updateRenderer(r);
 				}
 			} else if (!UPNPHelper.isNonRenderer(ia)) {
 				// It's brand new
@@ -1617,9 +1634,11 @@ public class RendererConfiguration extends Renderer {
 			}
 		}
 		// Otherwise check the address association
-		for (Entry<InetAddress, RendererConfiguration> entry : ADDRESS_ASSOCIATION.entrySet()) {
-			if (entry.getValue() == this) {
-				return entry.getKey();
+		for (Entry<InetAddress, HashSet<RendererConfiguration>> entry : ADDRESS_ASSOCIATION.entrySet()) {
+			for (RendererConfiguration rc : entry.getValue()) {
+				if (rc == this) {
+					return entry.getKey();
+				}
 			}
 		}
 		return null;
@@ -1681,8 +1700,11 @@ public class RendererConfiguration extends Renderer {
 				PMS.get().getFoundRenderers().remove(r);
 				UPNPHelper.getInstance().removeRenderer(r);
 				InetAddress ia = r.getAddress();
-				if (ADDRESS_ASSOCIATION.get(ia) == r) {
-					ADDRESS_ASSOCIATION.remove(ia);
+				HashSet<RendererConfiguration> allRenderer = getRendererAtIp(ia);
+				for (RendererConfiguration rc : allRenderer) {
+					if (rc == r) {
+						ADDRESS_ASSOCIATION.get(ia).remove(r);
+					}
 				}
 				// TODO: actually delete rootfolder, etc.
 			}
@@ -2633,19 +2655,21 @@ public class RendererConfiguration extends Renderer {
 	 */
 	public int calculatedSpeed() throws InterruptedException, ExecutionException {
 		int max = getInt(MAX_VIDEO_BITRATE, 0);
-		for (Entry<InetAddress, RendererConfiguration> entry : ADDRESS_ASSOCIATION.entrySet()) {
-			if (entry.getValue() == this) {
-				Future<Integer> speed = SpeedStats.getSpeedInMBitsStored(entry.getKey());
-				if (speed != null) {
-					if (max == 0) {
+		for (Entry<InetAddress, HashSet<RendererConfiguration>> entry : ADDRESS_ASSOCIATION.entrySet()) {
+			for (RendererConfiguration rc : entry.getValue()) {
+				if (rc == this) {
+					Future<Integer> speed = SpeedStats.getSpeedInMBitsStored(entry.getKey());
+					if (speed != null) {
+						if (max == 0) {
+							return speed.get();
+						}
+
+						if (speed.get() > max && max > 0) {
+							return max;
+						}
+
 						return speed.get();
 					}
-
-					if (speed.get() > max && max > 0) {
-						return max;
-					}
-
-					return speed.get();
 				}
 			}
 		}
