@@ -18,7 +18,6 @@
 package net.pms.encoders;
 
 import java.io.IOException;
-import javax.swing.JComponent;
 import net.pms.configuration.DeviceConfiguration;
 import net.pms.configuration.PmsConfiguration;
 import net.pms.dlna.DLNAMediaInfo;
@@ -28,6 +27,7 @@ import net.pms.io.PipeProcess;
 import net.pms.io.ProcessWrapper;
 import net.pms.io.ProcessWrapperImpl;
 import net.pms.util.PlayerUtil;
+import net.pms.util.UMSUtils;
 
 public class MEncoderWebVideo extends MEncoderVideo {
 	public static final PlayerId ID = StandardPlayerId.MENCODER_WEB_VIDEO;
@@ -38,11 +38,6 @@ public class MEncoderWebVideo extends MEncoderVideo {
 
 	// Not to be instantiated by anything but PlayerFactory
 	MEncoderWebVideo() {
-	}
-
-	@Override
-	public JComponent config() {
-		return null;
 	}
 
 	@Override
@@ -128,10 +123,7 @@ public class MEncoderWebVideo extends MEncoderVideo {
 		pw.runInNewThread();
 
 		// Not sure what good this 50ms wait will do for the calling method.
-		try {
-			Thread.sleep(50);
-		} catch (InterruptedException e) {
-		}
+		UMSUtils.sleep(50);
 		configuration = prev;
 		return pw;
 	}

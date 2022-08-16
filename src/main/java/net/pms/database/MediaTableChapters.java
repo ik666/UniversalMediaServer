@@ -38,6 +38,7 @@ public class MediaTableChapters extends MediaTable {
 	private static final int SIZE_LANG = 3;
 
 	public static final String TABLE_NAME = "CHAPTERS";
+	public static final String TABLE_COL_FILEID = TABLE_NAME + ".FILEID";
 
 	/**
 	 * Table version must be increased every time a change is done to the table
@@ -100,7 +101,7 @@ public class MediaTableChapters extends MediaTable {
 				"TITLE          VARCHAR(" + SIZE_MAX + ")                               , " +
 				"START_TIME     DOUBLE PRECISION                                        , " +
 				"END_TIME       DOUBLE PRECISION                                        , " +
-				"THUMBNAIL		OTHER	                    		            		, " +
+				"THUMBNAIL      OTHER                                                   , " +
 				"CONSTRAINT PKCHAP PRIMARY KEY (FILEID, ID, LANG)                       , " +
 				"FOREIGN KEY(FILEID) REFERENCES " + MediaTableFiles.TABLE_NAME + "(ID) ON DELETE CASCADE" +
 			")"

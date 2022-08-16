@@ -1,5 +1,41 @@
 # Changelog
 
+### [11.4.0](https://github.com/UniversalMediaServer/UniversalMediaServer/compare/11.3.0...11.4.0) (2022-07-29)
+
+### General:
+- Enabled UPnP searching, with the ability to disable for problematic renderers
+- Improved performance when scanning and browsing by up to 3,563%
+- Improved performance when handling API metadata
+- Improved performance with many audio files
+- Fixed broken translations
+- Fixed some API metadata handling bugs
+- Fixed macOS startup crash
+- Fixed running as a service on x64 Windows
+
+### Translation updates via Crowdin
+- Catalan (99%) (thanks, Toni Grau i Quellos!)
+- Czech (100%)
+- Danish (100%) (thanks, NCAA!)
+- Finnish (100%) (thanks, Esko Gardner!)
+- German (99%) (thanks, pipin!)
+- Italian (100%) (thanks, Oscar Zambotti!)
+- Korean (100%) (thanks, VenusGirl!)
+- Spanish (96%) (thanks, edwardalvarez2011!)
+- Persian (84%) (thanks, Sadra Imam!)
+- Polish (100%) (thanks, Karol Szastok!)
+- Portuguese (100%) (thanks, mariopinto!)
+- Portuguese (Brazilian) (100%) (thanks, Mauro.A!)
+- Turkish (100%) (thanks, Burak Yavuz!)
+
+### Dependencies
+- Updated JRE to 17.0.4
+- Updated junit5 to 5.9.0
+- Updated maven-assembly-plugin to 3.4.2
+- Updated maven-project-info-reports-plugin 3.4.0
+- Updated maven-resources-plugin to 3.3.0
+- Updated oshi-core to 6.2.2
+- Updated spotbugs-maven-plugin to 4.7.1.1
+
 ### [11.3.0](https://github.com/UniversalMediaServer/UniversalMediaServer/compare/11.2.0...11.3.0) (2022-07-17)
 
 ### General

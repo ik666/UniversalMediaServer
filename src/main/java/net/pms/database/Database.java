@@ -18,12 +18,10 @@
 package net.pms.database;
 
 import com.zaxxer.hikari.HikariDataSource;
-import java.awt.Component;
 import java.sql.*;
-import javax.swing.JOptionPane;
-import javax.swing.SwingUtilities;
 import net.pms.Messages;
-import net.pms.PMS;
+import net.pms.newgui.GuiUtil;
+import net.pms.util.UMSUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -116,7 +114,7 @@ public abstract class Database extends DatabaseHelper {
 				needRetry = DatabaseEmbedded.openFailed(dbName, se);
 			} else {
 				LOGGER.debug("Database connection error, retrying in 10 seconds");
-				sleep(10000);
+				UMSUtils.sleep(10000);
 				needRetry = true;
 			}
 			if (needRetry) {
@@ -165,7 +163,8 @@ public abstract class Database extends DatabaseHelper {
 		}
 
 		if (embedded) {
-			try (Connection con = getConnection()) {
+			try {
+				Connection con = getConnection();
 				DatabaseEmbedded.shutdown(con);
 			} catch (SQLException ex) {
 				LOGGER.error("shutdown DB ", ex);
@@ -186,31 +185,7 @@ public abstract class Database extends DatabaseHelper {
 	}
 
 	public static void showMessageDialog(String message, String dbDir) {
-		if (!PMS.isHeadless() && PMS.get().getFrame() != null) {
-			try {
-				JOptionPane.showMessageDialog(
-					SwingUtilities.getWindowAncestor((Component) PMS.get().getFrame()),
-					String.format(Messages.getString(message), dbDir),
-					Messages.getString("Error"),
-					JOptionPane.ERROR_MESSAGE
-				);
-			} catch (NullPointerException e1) {
-				LOGGER.debug("Failed to show database connection error message, probably because GUI is not initialized yet. Error was {}", e1);
-			}
-		}
-	}
-
-	/**
-	 * Utility method to call {@link Thread#sleep(long)} without having to catch
-	 * the InterruptedException.
-	 *
-	 * @param delay the delay
-	 */
-	public static void sleep(int delay) {
-		try {
-			Thread.sleep(delay);
-		} catch (InterruptedException e) {
-		}
+		GuiUtil.showErrorMessage(String.format(Messages.getString(message), dbDir), Messages.getString("Error"));
 	}
 
 	public enum DatabaseStatus {

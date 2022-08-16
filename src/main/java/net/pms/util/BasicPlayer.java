@@ -98,9 +98,6 @@ public interface BasicPlayer extends ActionListener {
 		public Minimal(DeviceConfiguration renderer) {
 			this.renderer = renderer;
 			state = new State();
-			if (renderer.gui != null) {
-				connect(renderer.gui);
-			}
 			reset();
 		}
 
@@ -109,7 +106,7 @@ public interface BasicPlayer extends ActionListener {
 		}
 
 		@Override
-		public void reset() {
+		public final void reset() {
 			state.playback = STOPPED;
 			state.position = "";
 			state.duration = "";
@@ -153,6 +150,7 @@ public interface BasicPlayer extends ActionListener {
 			} finally {
 				listenersLock.readLock().unlock();
 			}
+			renderer.refreshPlayerStateGui(state);
 		}
 
 		@Override
@@ -431,10 +429,7 @@ public interface BasicPlayer extends ActionListener {
 					player.addAll(-1, f.getChildren(), -1);
 					// add a short delay here since player.add uses
 					// swing.invokelater
-					try {
-						Thread.sleep(1000);
-					} catch (Exception e) {
-					}
+					UMSUtils.sleep(1000);
 					player.pressPlay(null, null);
 				};
 				new Thread(r).start();

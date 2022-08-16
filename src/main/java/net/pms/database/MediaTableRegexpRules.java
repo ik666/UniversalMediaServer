@@ -32,6 +32,9 @@ import org.slf4j.LoggerFactory;
 public class MediaTableRegexpRules extends MediaTable {
 	private static final Logger LOGGER = LoggerFactory.getLogger(MediaTableRegexpRules.class);
 	public static final String TABLE_NAME = "REGEXP_RULES";
+	public static final String TABLE_COL_ID = TABLE_NAME + ".ID";
+	public static final String TABLE_COL_REGEXP_ORDER = TABLE_NAME + ".REGEXP_ORDER";
+	public static final String TABLE_COL_REGEXP_RULE = TABLE_NAME + ".REGEXP_RULE";
 
 	/**
 	 * Table version must be increased every time a change is done to the table
@@ -100,9 +103,9 @@ public class MediaTableRegexpRules extends MediaTable {
 		LOGGER.debug(LOG_CREATING_TABLE, DATABASE_NAME, TABLE_NAME);
 		execute(connection,
 			"CREATE TABLE " + TABLE_NAME + " ( " +
-				"ID					VARCHAR(255)		PRIMARY KEY	, " +
-				"REGEXP_RULE		VARCHAR(255)					, " +
-				"REGEXP_ORDER		NUMERIC							  " +
+				"ID	                VARCHAR(255)       PRIMARY KEY , " +
+				"REGEXP_RULE        VARCHAR(255)                   , " +
+				"REGEXP_ORDER       NUMERIC                          " +
 			")",
 			"INSERT INTO " + TABLE_NAME + " VALUES ( '###', '(?i)^\\W.+', 0 )",
 			"INSERT INTO " + TABLE_NAME + " VALUES ( '0-9', '(?i)^\\d.+', 1 )"

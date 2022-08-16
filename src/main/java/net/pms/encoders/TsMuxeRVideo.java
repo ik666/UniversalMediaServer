@@ -18,15 +18,7 @@
 package net.pms.encoders;
 
 import static org.apache.commons.lang3.StringUtils.isNotBlank;
-import com.jgoodies.forms.builder.PanelBuilder;
-import com.jgoodies.forms.factories.Borders;
-import com.jgoodies.forms.layout.CellConstraints;
-import com.jgoodies.forms.layout.FormLayout;
 import com.sun.jna.Platform;
-import java.awt.ComponentOrientation;
-import java.awt.Font;
-import java.awt.event.ItemEvent;
-import java.awt.event.ItemListener;
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -34,11 +26,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import javax.swing.JCheckBox;
-import javax.swing.JComponent;
-import javax.swing.JPanel;
 import net.pms.Messages;
-import net.pms.PMS;
 import net.pms.configuration.DeviceConfiguration;
 import net.pms.configuration.ExecutableInfo;
 import net.pms.configuration.ExecutableInfo.ExecutableInfoBuilder;
@@ -50,11 +38,10 @@ import net.pms.dlna.*;
 import net.pms.formats.Format;
 import net.pms.io.*;
 import net.pms.network.HTTPResource;
-import net.pms.newgui.GuiUtil;
 import net.pms.platform.windows.NTStatus;
 import net.pms.util.CodecUtil;
-import net.pms.util.FormLayoutUtil;
 import net.pms.util.PlayerUtil;
+import net.pms.util.UMSUtils;
 import net.pms.util.Version;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -69,9 +56,6 @@ public class TsMuxeRVideo extends Player {
 	/** The {@link Configuration} key for the tsMuxeR executable type. */
 	public static final String KEY_TSMUXER_EXECUTABLE_TYPE = "tsmuxer_executable_type";
 	public static final String NAME = "tsMuxeR Video";
-
-	private static final String COL_SPEC = "left:pref, 0:grow";
-	private static final String ROW_SPEC = "p, 3dlu, p, 3dlu, p, 3dlu, p, 3dlu, p, 3dlu, 0:grow";
 
 	// Not to be instantiated by anything but PlayerFactory
 	TsMuxeRVideo() {
@@ -670,47 +654,32 @@ public class TsMuxeRVideo extends Player {
 		p.attachProcess(pipeProcess);
 		pipeProcess.runInNewThread();
 
-		try {
-			Thread.sleep(50);
-		} catch (InterruptedException e) {
-		}
+		UMSUtils.sleep(50);
 		tsPipe.deleteLater();
 
 		ProcessWrapper ffPipeProcess = ffVideoPipe.getPipeProcess();
 		p.attachProcess(ffPipeProcess);
 		ffPipeProcess.runInNewThread();
-		try {
-			Thread.sleep(50);
-		} catch (InterruptedException e) {
-		}
+		UMSUtils.sleep(50);
 		ffVideoPipe.deleteLater();
 
 		p.attachProcess(ffVideo);
 		ffVideo.runInNewThread();
-		try {
-			Thread.sleep(50);
-		} catch (InterruptedException e) {
-		}
+		UMSUtils.sleep(50);
 
 		if (ffAudioPipe != null && params.getAid() != null) {
 			for (int i = 0; i < ffAudioPipe.length; i++) {
 				ffPipeProcess = ffAudioPipe[i].getPipeProcess();
 				p.attachProcess(ffPipeProcess);
 				ffPipeProcess.runInNewThread();
-				try {
-					Thread.sleep(50);
-				} catch (InterruptedException e) {
-				}
+				UMSUtils.sleep(50);
 				ffAudioPipe[i].deleteLater();
 				p.attachProcess(ffAudio[i]);
 				ffAudio[i].runInNewThread();
 			}
 		}
 
-		try {
-			Thread.sleep(100);
-		} catch (InterruptedException e) {
-		}
+		UMSUtils.sleep(100);
 
 		p.runInNewThread();
 		configuration = prev;
@@ -730,54 +699,6 @@ public class TsMuxeRVideo extends Player {
 	@Override
 	public int type() {
 		return Format.VIDEO;
-	}
-
-	private JCheckBox tsmuxerforcefps;
-	private JCheckBox muxallaudiotracks;
-
-	@Override
-	public JComponent config() {
-		// Apply the orientation for the locale
-		ComponentOrientation orientation = ComponentOrientation.getOrientation(PMS.getLocale());
-		String colSpec = FormLayoutUtil.getColSpec(COL_SPEC, orientation);
-		FormLayout layout = new FormLayout(colSpec, ROW_SPEC);
-
-		PanelBuilder builder = new PanelBuilder(layout);
-		builder.border(Borders.EMPTY);
-		builder.opaque(false);
-
-		CellConstraints cc = new CellConstraints();
-
-		JComponent cmp = builder.addSeparator(Messages.getString("GeneralSettings_SentenceCase"), FormLayoutUtil.flip(cc.xyw(2, 1, 1), colSpec, orientation));
-		cmp = (JComponent) cmp.getComponent(0);
-		cmp.setFont(cmp.getFont().deriveFont(Font.BOLD));
-
-		tsmuxerforcefps = new JCheckBox(Messages.getString("ForceFpsParsedFfmpeg"), configuration.isTsmuxerForceFps());
-		tsmuxerforcefps.setContentAreaFilled(false);
-		tsmuxerforcefps.addItemListener(new ItemListener() {
-			@Override
-			public void itemStateChanged(ItemEvent e) {
-				configuration.setTsmuxerForceFps(e.getStateChange() == ItemEvent.SELECTED);
-			}
-		});
-		builder.add(GuiUtil.getPreferredSizeComponent(tsmuxerforcefps), FormLayoutUtil.flip(cc.xy(2, 3), colSpec, orientation));
-
-		muxallaudiotracks = new JCheckBox(Messages.getString("MuxAllAudioTracks"), configuration.isMuxAllAudioTracks());
-		muxallaudiotracks.setContentAreaFilled(false);
-		muxallaudiotracks.addItemListener(new ItemListener() {
-			@Override
-			public void itemStateChanged(ItemEvent e) {
-				configuration.setMuxAllAudioTracks(e.getStateChange() == ItemEvent.SELECTED);
-			}
-		});
-		builder.add(GuiUtil.getPreferredSizeComponent(muxallaudiotracks), FormLayoutUtil.flip(cc.xy(2, 5), colSpec, orientation));
-
-		JPanel panel = builder.getPanel();
-
-		// Apply the orientation to the panel and all components in it
-		panel.applyComponentOrientation(orientation);
-
-		return panel;
 	}
 
 	@Override

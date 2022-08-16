@@ -36,6 +36,7 @@ import org.slf4j.LoggerFactory;
 public class MediaTableSubtracks extends MediaTable {
 	private static final Logger LOGGER = LoggerFactory.getLogger(MediaTableSubtracks.class);
 	public static final String TABLE_NAME = "SUBTRACKS";
+	public static final String TABLE_COL_FILEID = TABLE_NAME + ".FILEID";
 
 	private static final int SIZE_LANG = 3;
 	private static final int SIZE_EXTERNALFILE = 1000;
@@ -101,14 +102,14 @@ public class MediaTableSubtracks extends MediaTable {
 		LOGGER.debug(LOG_CREATING_TABLE, DATABASE_NAME, TABLE_NAME);
 		execute(connection,
 			"CREATE TABLE " + TABLE_NAME + " (" +
-				"ID             INTEGER								NOT NULL			, " +
-				"FILEID         BIGINT								NOT NULL			, " +
-				"LANG           VARCHAR(" + SIZE_LANG + ")								, " +
-				"TITLE          VARCHAR(" + SIZE_MAX + ")								, " +
-				"FORMAT_TYPE    INTEGER													, " +
-				"EXTERNALFILE   VARCHAR(" + SIZE_EXTERNALFILE + ")	NOT NULL default ''	, " +
-				"CHARSET        VARCHAR(" + SIZE_MAX + ")								, " +
-				"CONSTRAINT PKSUB PRIMARY KEY (FILEID, ID, EXTERNALFILE)				, " +
+				"ID             INTEGER                             NOT NULL            , " +
+				"FILEID         BIGINT                              NOT NULL            , " +
+				"LANG           VARCHAR(" + SIZE_LANG + ")                              , " +
+				"TITLE          VARCHAR(" + SIZE_MAX + ")                               , " +
+				"FORMAT_TYPE    INTEGER                                                 , " +
+				"EXTERNALFILE   VARCHAR(" + SIZE_EXTERNALFILE + ")  NOT NULL default '' , " +
+				"CHARSET        VARCHAR(" + SIZE_MAX + ")                               , " +
+				"CONSTRAINT PKSUB PRIMARY KEY (FILEID, ID, EXTERNALFILE)                , " +
 				"FOREIGN KEY(FILEID) REFERENCES " + MediaTableFiles.TABLE_NAME + "(ID) ON DELETE CASCADE" +
 			")"
 		);
