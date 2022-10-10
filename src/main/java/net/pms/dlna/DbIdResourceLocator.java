@@ -27,6 +27,7 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
+import org.apache.commons.configuration.ConfigurationException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import net.pms.Messages;
@@ -38,13 +39,14 @@ import net.pms.database.MediaTableMusicBrainzReleaseLike;
 import net.pms.dlna.api.DoubleRecordFilter;
 import net.pms.dlna.api.MusicBrainzAlbum;
 import net.pms.dlna.virtual.VirtualFolderDbId;
+import net.pms.network.mediaserver.handlers.api.ApiRenderer;
 
 /**
  * This class resolves DLNA objects identified by databaseID's.
  */
 public class DbIdResourceLocator {
 	private static final Logger LOGGER = LoggerFactory.getLogger(DbIdResourceLocator.class);
-
+	private static ApiRenderer apiRenderer;
 	/**
 	 * This class is not meant to be instantiated.
 	 */
@@ -106,6 +108,7 @@ public class DbIdResourceLocator {
 							try (ResultSet resultSet = statement.executeQuery(sql)) {
 								if (resultSet.next()) {
 									res = new PlaylistFolder(new File(resultSet.getString("FILENAME")));
+									res.setDefaultRenderer(apiRenderer);
 									res.setId(String.format("$DBID$PLAYLIST$%s", typeAndIdent.ident));
 									res.resolve();
 									res.refreshChildren();
@@ -300,5 +303,13 @@ public class DbIdResourceLocator {
 		DLNAMediaInfo mi = new DLNAMediaInfo();
 		mi.setAudioTracks(audios);
 		albumFolder.setMedia(mi);
+	}
+
+	static {
+		try {
+			apiRenderer =  new ApiRenderer();
+		} catch (ConfigurationException | InterruptedException e) {
+			LOGGER.error("cannot instantiate API renderer", e);
+		}
 	}
 }
