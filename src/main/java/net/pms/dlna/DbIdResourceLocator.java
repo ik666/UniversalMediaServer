@@ -31,6 +31,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import net.pms.Messages;
 import net.pms.PMS;
+import net.pms.configuration.RendererConfiguration;
 import net.pms.database.MediaDatabase;
 import net.pms.database.MediaTableAudiotracks;
 import net.pms.database.MediaTableFiles;
@@ -51,8 +52,9 @@ public class DbIdResourceLocator {
 	private DbIdResourceLocator() {
 	}
 
-	public static DLNAResource locateResource(String id) {
+	public static DLNAResource locateResource(String id, RendererConfiguration renderer) {
 		DLNAResource resource = getDLNAResourceByDBID(DbIdMediaType.getTypeIdentByDbid(id));
+		resource.updateRendering(renderer);
 		return resource;
 	}
 
