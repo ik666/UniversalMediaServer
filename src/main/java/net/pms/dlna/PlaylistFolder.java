@@ -243,7 +243,7 @@ public class PlaylistFolder extends DLNAResource {
 					if (addChildGlobal) {
 						addChild(type == Format.PLAYLIST ? new PlaylistFolder(en) : new RealFile(en, entry.title));
 					} else {
-						addChild(type == Format.PLAYLIST ? new PlaylistFolder(en) : new RealFile(en, entry.title), false, false);
+						addChild(type == Format.PLAYLIST ? new PlaylistFolder(en) : new RealFile(en, entry.title), true, false);
 					}
 					valid = true;
 				}
@@ -265,7 +265,7 @@ public class PlaylistFolder extends DLNAResource {
 					if (addChildGlobal) {
 						addChild(d);
 					} else {
-						addChild(d, false, false);
+						addChild(d, true, false);
 					}
 					valid = true;
 				}
