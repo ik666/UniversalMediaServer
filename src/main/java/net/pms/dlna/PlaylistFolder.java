@@ -17,7 +17,7 @@ import org.apache.commons.io.input.BOMInputStream;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public final class PlaylistFolder extends DLNAResource {
+public class PlaylistFolder extends DLNAResource {
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(PlaylistFolder.class);
 	private final String name;
@@ -144,6 +144,10 @@ public final class PlaylistFolder extends DLNAResource {
 
 	@Override
 	protected void resolveOnce() {
+		resolveOnce(true);
+	}
+
+	protected void resolveOnce(boolean addChildGlobal) {
 		ArrayList<Entry> entries = new ArrayList<>();
 		boolean m3u = false;
 		boolean pls = false;
@@ -236,7 +240,11 @@ public final class PlaylistFolder extends DLNAResource {
 			if (!isweb && !FileUtil.isUrl(entry.fileName)) {
 				File en = new File(FilenameUtils.concat(getPlaylistfile().getParent(), entry.fileName));
 				if (en.exists()) {
-					addChild(type == Format.PLAYLIST ? new PlaylistFolder(en) : new RealFile(en, entry.title));
+					if (addChildGlobal) {
+						addChild(type == Format.PLAYLIST ? new PlaylistFolder(en) : new RealFile(en, entry.title));
+					} else {
+						addChild(type == Format.PLAYLIST ? new PlaylistFolder(en) : new RealFile(en, entry.title), false, false);
+					}
 					valid = true;
 				}
 			} else {
@@ -254,7 +262,11 @@ public final class PlaylistFolder extends DLNAResource {
 						type == Format.IMAGE ? new FeedItem(entry.title, u, null, null, Format.IMAGE) :
 							type == Format.PLAYLIST ? getPlaylist(entry.title, u, 0) : null;
 				if (d != null) {
-					addChild(d);
+					if (addChildGlobal) {
+						addChild(d);
+					} else {
+						addChild(d, false, false);
+					}
 					valid = true;
 				}
 			}

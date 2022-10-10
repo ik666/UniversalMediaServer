@@ -105,7 +105,7 @@ public class DbIdResourceLocator {
 							}
 							try (ResultSet resultSet = statement.executeQuery(sql)) {
 								if (resultSet.next()) {
-									res = new PlaylistFolder(new File(resultSet.getString("FILENAME")));
+									res = new PlaylistFolderDBID(new File(resultSet.getString("FILENAME")));
 									res.setId(String.format("$DBID$PLAYLIST$%s", typeAndIdent.ident));
 									res.resolve();
 									res.refreshChildren();
