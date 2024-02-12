@@ -30,6 +30,7 @@ import java.util.regex.Pattern;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.transform.TransformerException;
 import javax.xml.xpath.XPathExpressionException;
+import net.pms.PMS;
 import net.pms.configuration.RendererConfigurations;
 import net.pms.dlna.protocolinfo.PanasonicDmpProfiles;
 import net.pms.network.NetworkDeviceFilter;
@@ -100,7 +101,7 @@ public class RequestHandlerV2 extends SimpleChannelUpstreamHandler {
 			return;
 		}
 
-		if ((HttpMethod.GET.equals(method) || HttpMethod.HEAD.equals(method)) && uri.startsWith("ums/")) {
+		if (PMS.getConfiguration().isAuthenticationEnabled() && (HttpMethod.GET.equals(method) || HttpMethod.HEAD.equals(method)) && uri.startsWith("ums/")) {
 			// Request to retrieve a media stream.
 			// Renderer should has been registred.
 			MediaServerRequest mediaServerRequest = new MediaServerRequest(uri);
@@ -121,6 +122,16 @@ public class RequestHandlerV2 extends SimpleChannelUpstreamHandler {
 					 * It may be a caster/proxy control point, so let change to the real renderer.
 					 * fixme : non-renderer should advise a special uuid.
 					 * renderer = null;
+					 */
+
+					/**
+					 * According to UPnP device architecture control points already advertise their UUID in the CPUUID.UPNP.ORG property of
+					 * the M-SEARCH unicast message. Side note: Also in a 2-box setup browsing the CDS is done by the embedded control point
+					 * of the renderer device.
+					 *
+					 * Spec says: "When the control point is implemented in a UPnP device", in this case the renderer, "it is recommended to
+					 * use the UDN of the co-located UPnP device". This means, even in a 2-box setup, the UUID of the control point and the
+					 * renderer device may be different. Having the same UUID for both devices is not mandatory.
 					 */
 				}
 			}
