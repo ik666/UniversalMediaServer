@@ -9,7 +9,7 @@ import java.sql.Types;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import net.pms.store.item.WebStreamMetadata;
+import net.pms.store.utils.WebStreamMetadata;
 
 public class MediaTableWebResource extends MediaTable {
 
@@ -27,7 +27,11 @@ public class MediaTableWebResource extends MediaTable {
 	private static final String SQL_MERGE_RESOURCE = MERGE_INTO + TABLE_NAME + "(" + COL_URL + COMMA + COL_LOGO_URL + COMMA + COL_CONTENT_TYPE +
 		COMMA + COL_GENRE + COMMA + COL_BITRATE + COMMA + COL_SAMPLE_RATE + COMMA + COL_TYPE + ")" + VALUES + " ( ?, ?, ?, ?, ?, ?, ?) ";
 
+	private static final String SQL_MERGE_RESOURCE_WITHOUT_LOGO = MERGE_INTO + TABLE_NAME + "(" + COL_URL + COMMA + COMMA + COL_CONTENT_TYPE +
+		COMMA + COL_GENRE + COMMA + COL_BITRATE + COMMA + COL_SAMPLE_RATE + COMMA + COL_TYPE + ")" + VALUES + " ( ?, ?, ?, ?, ?, ?) ";
+
 	private static final String SQL_DELETE_ALL = DELETE_FROM + TABLE_NAME;
+	private static final String SQL_DELETE_URL = DELETE_FROM + TABLE_NAME + WHERE + COL_URL + EQUAL + PARAMETER;
 
 	private static final String SQL_GET_ALL_BY_URL = SELECT_ALL + FROM + TABLE_NAME + WHERE + COL_URL + EQUAL + PARAMETER;
 
@@ -113,10 +117,32 @@ public class MediaTableWebResource extends MediaTable {
 		} catch (Exception e) {
 			LOGGER.error("cannot delete web resource entries.", e);
 		}
+	}
 
+	/**
+	 * Deletes one entry
+	 */
+	public static void deleteByUrl(String url) {
+		try (
+			Connection connection = MediaDatabase.getConnectionIfAvailable();
+			PreparedStatement updateStatment = connection.prepareStatement(SQL_DELETE_URL);
+		) {
+			updateStatment.setString(1, url);
+			updateStatment.executeUpdate();
+		} catch (Exception e) {
+			LOGGER.error("cannot delete web resource entry for given URL {} ", url, e);
+		}
 	}
 
 	public static void insertOrUpdateWebResource(WebStreamMetadata meta) {
+		if (StringUtils.isAllBlank(meta.LOGO_URL())) {
+			insertOrUpdateWebResourceWithoutLogo(meta);
+		} else {
+			insertOrUpdateWebResourceWithLogo(meta);
+		}
+	}
+
+	public static void insertOrUpdateWebResourceWithLogo(WebStreamMetadata meta) {
 		if (meta == null) {
 			LOGGER.trace("no metadata ... do not store any data.");
 			return;
@@ -157,6 +183,45 @@ public class MediaTableWebResource extends MediaTable {
 			mergeStatement.executeUpdate();
 		} catch (Exception e) {
 			LOGGER.error("cannot merge web resource {} ", meta, e);
+		}
+	}
+
+	public static void insertOrUpdateWebResourceWithoutLogo(WebStreamMetadata meta) {
+		if (meta == null) {
+			LOGGER.trace("no metadata ... do not store any data.");
+			return;
+		}
+		LOGGER.trace("adding WebResourceMeta to database (without logo) : {}", meta.toString());
+
+		try (
+			Connection connection = MediaDatabase.getConnectionIfAvailable();
+			PreparedStatement mergeStatement = connection.prepareStatement(SQL_MERGE_RESOURCE_WITHOUT_LOGO, ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_UPDATABLE);
+		) {
+			mergeStatement.setString(1, meta.URL());
+			if (meta.CONTENT_TYPE() != null) {
+				mergeStatement.setString(2, meta.CONTENT_TYPE());
+			} else {
+				mergeStatement.setNull(2, Types.VARCHAR);
+			}
+			if (meta.GENRE() != null) {
+				mergeStatement.setString(3, meta.GENRE());
+			} else {
+				mergeStatement.setNull(3, Types.VARCHAR);
+			}
+			if (meta.BITRATE() != null) {
+				mergeStatement.setInt(4, meta.BITRATE());
+			} else {
+				mergeStatement.setNull(4, Types.INTEGER);
+			}
+			if (meta.SAMPLE_RATE() != null) {
+				mergeStatement.setInt(5, meta.SAMPLE_RATE());
+			} else {
+				mergeStatement.setNull(5, Types.INTEGER);
+			}
+			mergeStatement.setInt(6, meta.TYPE());
+			mergeStatement.executeUpdate();
+		} catch (Exception e) {
+			LOGGER.error("cannot merge web resource (without logo) {} ", meta, e);
 		}
 	}
 
