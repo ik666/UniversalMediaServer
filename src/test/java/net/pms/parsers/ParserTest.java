@@ -90,6 +90,8 @@ public class ParserTest {
 		);
 
 		//disable MediaInfoParser
+		parser.block();
+
 		//should fallback to FFmpegParser when MediaInfoParser is not found
 		if (FFmpegParser.isValid()) {
 			assertEquals(
@@ -97,6 +99,8 @@ public class ParserTest {
 				getTestFileMediaInfo("video-h264-aac.mp4").getMediaParser()
 			);
 		}
+		// cannot be tested this way any more, because Parser.parse instances an new MediaInfoParser
+
 		//should fallback to JaudiotaggerParser when MediaInfoParser is not found
 //		assertEquals(
 //			JaudiotaggerParser.PARSER_NAME,
