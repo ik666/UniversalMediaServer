@@ -254,7 +254,6 @@ public abstract class DatabaseHelper {
 	protected static final String IS = " IS ";
 	protected static final String INDEX = "INDEX ";
 	protected static final String JOIN = " JOIN ";
-	protected static final String KEY = " KEY ";
 	protected static final String LESS_OR_EQUAL_THAN = " <= ";
 	protected static final String NOT = "NOT ";
 	protected static final String NOT_IN = " NOT" + IN;
@@ -645,8 +644,6 @@ public abstract class DatabaseHelper {
 				for (String sql : sqls) {
 					stmt.execute(sql);
 				}
-			} catch (Exception e) {
-				LOGGER.error("execute SQL error", e);
 			}
 		}
 	}
