@@ -46,3 +46,4 @@ docker/jre*
 # this is where the compiled client goes after "yarn build"
 /src/main/external-resources/web/react-client
 /nbproject/
+UMS_dev.launch
