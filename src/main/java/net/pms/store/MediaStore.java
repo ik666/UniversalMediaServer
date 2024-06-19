@@ -686,14 +686,17 @@ public class MediaStore extends StoreContainer {
 							if (shouldDoAudioTrackSorting(storeContainer)) {
 								sortChildrenWithAudioElements(storeContainer);
 							}
-							for (int i = 0; i < storeContainer.getChildren().size(); i++) {
-								final StoreResource child = storeContainer.getChildren().get(i);
+							Iterator<StoreResource> iter = storeContainer.getChildren().iterator();
+							int i = 0;
+							while (iter.hasNext()) {
+								final StoreResource child = iter.next();
 								if (child != null) {
 									tpe.execute(child);
 									resources.add(child);
 								} else {
 									LOGGER.warn("null child at index {} in {}", i, systemName);
 								}
+								i++;
 							}
 
 							try {
@@ -916,7 +919,7 @@ public class MediaStore extends StoreContainer {
 		for (StoreResource res : resource.getChildren()) {
 			if (res instanceof StoreItem item && item.getFormat() != null && item.getFormat().isAudio()) {
 				if (res.getMediaInfo() == null || !res.getMediaInfo().hasAudioMetadata()) {
-					LOGGER.warn("Audio resource has no AudioMetadata : {}", res.getDisplayName());
+					LOGGER.warn("Audio resource has no AudioMetadata : id {} -> {}", res.getId(), res.getDisplayName());
 					continue;
 				}
 				MediaAudioMetadata metadata = res.getMediaInfo().getAudioMetadata();

@@ -17,10 +17,10 @@
 package net.pms.store;
 
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.StringTokenizer;
+import java.util.concurrent.CopyOnWriteArrayList;
 import net.pms.PMS;
 import net.pms.dlna.DLNAThumbnailInputStream;
 import net.pms.encoders.Engine;
@@ -63,7 +63,7 @@ public class StoreContainer extends StoreResource {
 	 *
 	 * This is only valid when the StoreResource is of the container type.
 	 */
-	private final List<StoreResource> children = new ArrayList<>();
+	private final List<StoreResource> children = new CopyOnWriteArrayList<>();
 
 	/**
 	 * The numerical ID (1-based index) assigned to the last child of this
@@ -431,7 +431,7 @@ public class StoreContainer extends StoreResource {
 	 *
 	 * @param child the LibraryResource to add to this node's list of children
 	 */
-	protected synchronized void addChildInternal(StoreResource child) {
+	protected void addChildInternal(StoreResource child) {
 		addChildInternal(child, true);
 	}
 
@@ -444,7 +444,7 @@ public class StoreContainer extends StoreResource {
 	 * @param isAddGlobally whether to store a reference to this child in the
 	 * global ID repository.
 	 */
-	protected synchronized void addChildInternal(StoreResource child, boolean isAddGlobally) {
+	protected void addChildInternal(StoreResource child, boolean isAddGlobally) {
 		if (child.getId() != null) {
 			LOGGER.debug("Node ({}) already has an ID ({}), which is overridden now. The previous parent node was: {}",
 					new Object[]{child.getClass().getName(), child.getResourceId(), child.getParent()});
