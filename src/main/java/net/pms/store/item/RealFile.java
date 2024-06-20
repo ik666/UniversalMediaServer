@@ -223,6 +223,8 @@ public class RealFile extends StoreItem {
 			input.setFile(file);
 			setMediaInfo(MediaInfoStore.getMediaInfo(filename, file, getFormat(), getType()));
 			setMediaStatus(MediaStatusStore.getMediaStatus(renderer.getAccountUserId(), filename));
+		} else {
+			LOGGER.trace("not resolving {}", this.getFileName());
 		}
 	}
 
