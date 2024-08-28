@@ -113,9 +113,9 @@ public abstract class JakartaServletUpnpStream extends UpnpStream {
 			throw new RuntimeException("Invalid request URI: " + requestURI, e);
 		}
 
-		if (requestMessage.getOperation().getMethod().equals(UpnpRequest.Method.UNKNOWN)) {
-			throw new RuntimeException("Method not supported: " + requestMethod);
-		}
+//		if (requestMessage.getOperation().getMethod().equals(UpnpRequest.Method.UNKNOWN)) {
+//			throw new RuntimeException("Method not supported: " + requestMethod);
+//		}
 
 		// Connection wrapper
 		requestMessage.setConnection(createConnection());
