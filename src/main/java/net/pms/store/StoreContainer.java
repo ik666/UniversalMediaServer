@@ -21,6 +21,8 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.StringTokenizer;
+import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.CopyOnWriteArrayList;
 import net.pms.PMS;
 import net.pms.dlna.DLNAThumbnailInputStream;
 import net.pms.encoders.TranscodingSettings;
@@ -59,7 +61,7 @@ public class StoreContainer extends StoreResource {
 	 *
 	 * This is only valid when the StoreResource is of the container type.
 	 */
-	private final List<StoreResource> children = new ArrayList<>();
+	private final List<StoreResource> children = new CopyOnWriteArrayList<>();
 
 	/**
 	 * The numerical ID (1-based index) assigned to the last child of this
