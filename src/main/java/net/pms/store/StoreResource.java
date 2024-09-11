@@ -305,9 +305,9 @@ public abstract class StoreResource implements Cloneable, Runnable {
 	public void run() {
 		try {
 			if (first == null) {
-				syncResolve();
+				resolve();
 				if (second != null) {
-					second.syncResolve();
+					second.resolve();
 				}
 			}
 		} catch (Exception e) {

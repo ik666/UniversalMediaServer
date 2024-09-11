@@ -232,7 +232,7 @@ public final class PlaylistFolder extends StoreContainer {
 		}
 
 		for (StoreResource r : getChildren()) {
-			r.syncResolve();
+			r.resolve();
 		}
 	}
 

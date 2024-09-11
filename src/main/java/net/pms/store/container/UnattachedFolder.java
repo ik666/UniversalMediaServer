@@ -64,7 +64,7 @@ public class UnattachedFolder extends StoreContainer {
 			// Now add the item and resolve its rendering details
 			d.setId(getId() + getIdOf(uri));
 			addChild(d);
-			d.syncResolve();
+			d.resolve();
 		}
 
 		return d;

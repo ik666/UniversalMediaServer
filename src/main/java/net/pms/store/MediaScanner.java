@@ -128,7 +128,7 @@ public class MediaScanner implements SharedContentListener {
 					} else {
 						// ugly hack
 						if (storeContainer instanceof DVDISOFile || storeContainer instanceof PlaylistFolder) {
-							storeContainer.syncResolve();
+							storeContainer.resolve();
 						}
 
 						storeContainer.discoverChildren();
@@ -421,7 +421,7 @@ public class MediaScanner implements SharedContentListener {
 			if (rf instanceof StoreItem storeItem) {
 				storeItem.resolveFormat();
 			}
-			rf.syncResolve();
+			rf.resolve();
 			if (rf.isValid()) {
 				LOGGER.info("New file {} was detected and added to the media store", file.getName());
 				MediaStoreIds.incrementSystemUpdateId();
