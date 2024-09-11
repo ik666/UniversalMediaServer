@@ -17,9 +17,9 @@
 package net.pms.store;
 
 import java.sql.Connection;
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import net.pms.Messages;
 import net.pms.database.MediaDatabase;
 import net.pms.database.MediaTableFiles;
@@ -29,36 +29,35 @@ import net.pms.media.MediaStatus;
 
 public class MediaStatusStore {
 
-	private static final Map<Integer, Map<String, MediaStatus>> STORE = new HashMap<>();
+	private static final Map<Integer, Map<String, MediaStatus>> STORE = new ConcurrentHashMap<>();
 
 	private MediaStatusStore() {
 		//should not be instantiated
 	}
 
 	public static MediaStatus getMediaStatus(int userId, String filename) {
-		synchronized (STORE) {
-			if (STORE.containsKey(userId) && STORE.get(userId) != null && STORE.get(userId).containsKey(filename)) {
-				return STORE.get(userId).get(filename);
-			}
-			MediaStatus mediaStatus = null;
-			Connection connection = null;
-			try {
-				connection = MediaDatabase.getConnectionIfAvailable();
-				if (connection != null) {
-					mediaStatus = MediaTableFilesStatus.getMediaStatus(connection, filename, userId);
-				}
-			} finally {
-				MediaDatabase.close(connection);
-			}
-			if (mediaStatus == null) {
-				mediaStatus = new MediaStatus();
-			}
-			if (!STORE.containsKey(userId)) {
-				STORE.put(userId, new HashMap<>());
-			}
-			STORE.get(userId).put(filename, mediaStatus);
-			return mediaStatus;
+		Map<String, MediaStatus> user = STORE.get(userId);
+		if (user != null) {
+			return user.get(filename);
 		}
+
+		MediaStatus mediaStatus = null;
+		Connection connection = null;
+		try {
+			connection = MediaDatabase.getConnectionIfAvailable();
+			if (connection != null) {
+				mediaStatus = MediaTableFilesStatus.getMediaStatus(connection, filename, userId);
+			}
+		} finally {
+			MediaDatabase.close(connection);
+		}
+		if (mediaStatus == null) {
+			mediaStatus = new MediaStatus();
+		}
+		Map<String, MediaStatus> newHm = new ConcurrentHashMap<>();
+		newHm.put(filename, mediaStatus);
+		STORE.put(userId, newHm);
+		return mediaStatus;
 	}
 
 	/**
@@ -201,17 +200,14 @@ public class MediaStatusStore {
 	}
 
 	public static void clear(int userId) {
-		synchronized (STORE) {
-			if (STORE.containsKey(userId) && STORE.get(userId) != null) {
-				STORE.get(userId).clear();
-			}
+		Map<String, MediaStatus> user = STORE.get(userId);
+		if (user != null) {
+			user.clear();
 		}
 	}
 
 	public static void clear() {
-		synchronized (STORE) {
-			STORE.clear();
-		}
+		STORE.clear();
 	}
 
 }

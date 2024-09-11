@@ -415,7 +415,7 @@ public class StoreContainer extends StoreResource {
 	 *
 	 * @param child the LibraryResource to add to this node's list of children
 	 */
-	protected synchronized void addChildInternal(StoreResource child) {
+	protected void addChildInternal(StoreResource child) {
 		addChildInternal(child, true);
 	}
 
@@ -428,7 +428,7 @@ public class StoreContainer extends StoreResource {
 	 * @param isAddGlobally whether to store a reference to this child in the
 	 * global ID repository.
 	 */
-	protected synchronized void addChildInternal(StoreResource child, boolean isAddGlobally) {
+	protected void addChildInternal(StoreResource child, boolean isAddGlobally) {
 		if (child.getId() != null) {
 			LOGGER.debug("Node ({}) already has an ID ({}), which is overridden now. The previous parent node was: {}",
 					new Object[]{child.getClass().getName(), child.getResourceId(), child.getParent()});
@@ -681,7 +681,7 @@ public class StoreContainer extends StoreResource {
 		discoverChildren();
 	}
 
-	protected final synchronized void discover(boolean forced) {
+	protected final void discover(boolean forced) {
 		// Discover children if it hasn't been done already
 		if (!isDiscovered()) {
 			LOGGER.trace("Initial discovering children for container: {}", getDisplayName());
