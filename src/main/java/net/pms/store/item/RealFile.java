@@ -202,7 +202,7 @@ public class RealFile extends StoreItem implements SystemFileResource {
 	}
 
 	@Override
-	public synchronized void resolve() {
+	public void resolve() {
 		if (file == null) {
 			LOGGER.error("RealFile points to no physical file. ");
 			return;

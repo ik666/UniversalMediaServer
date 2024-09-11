@@ -17,11 +17,9 @@
 package net.pms.store;
 
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.StringTokenizer;
-import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.CopyOnWriteArrayList;
 import net.pms.PMS;
 import net.pms.dlna.DLNAThumbnailInputStream;
