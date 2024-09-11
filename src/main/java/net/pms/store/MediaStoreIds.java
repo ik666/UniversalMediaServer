@@ -45,7 +45,7 @@ public class MediaStoreIds {
 	private MediaStoreIds() {
 	}
 
-	public static synchronized Long getMediaStoreResourceId(StoreResource resource) {
+	public static Long getMediaStoreResourceId(StoreResource resource) {
 		if (resource == null) {
 			return null;
 		}
