@@ -57,7 +57,6 @@ import net.pms.media.video.metadata.MediaVideoMetadata;
 import net.pms.media.video.metadata.TvSeriesMetadata;
 import net.pms.media.video.metadata.VideoMetadataLocalized;
 import net.pms.store.MediaInfoStore;
-import net.pms.store.MediaStore;
 import net.pms.store.MediaStoreIds;
 import net.pms.store.ThumbnailSource;
 import net.pms.store.ThumbnailStore;
@@ -299,14 +298,6 @@ public class APIUtils {
 			return;
 		}
 		Runnable r = () -> {
-			try {
-				// wait until MediaStore Workers release before starting
-				MediaStore.waitWorkers();
-			} catch (InterruptedException ex) {
-				Thread.currentThread().interrupt();
-				return;
-			}
-
 			if (!shouldLookupAndAddMetadata()) {
 				return;
 			}
