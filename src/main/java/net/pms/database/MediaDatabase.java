@@ -53,6 +53,9 @@ public class MediaDatabase extends Database {
 	@Override
 	public final void onOpening(boolean force) {
 		try {
+			try (Connection c = getConnection()) {
+				c.createStatement().execute("SET SESSION CHARACTERISTICS AS TRANSACTION ISOLATION LEVEL SERIALIZABLE");
+			}
 			checkTables(force);
 		} catch (SQLException se) {
 			LOGGER.error("Error checking tables: " + se.getMessage());

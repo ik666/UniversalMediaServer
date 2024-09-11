@@ -200,7 +200,7 @@ public class VirtualFolder extends StoreContainer {
 	}
 
 	@Override
-	public synchronized void discoverChildren() {
+	public void discoverChildren() {
 		if (discoverable == null) {
 			discoverable = new ArrayList<>();
 		} else {
