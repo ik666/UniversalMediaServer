@@ -37,7 +37,6 @@ import net.pms.formats.Format;
 import net.pms.formats.FormatFactory;
 import net.pms.media.MediaInfo;
 import net.pms.media.audio.MediaAudio;
-import net.pms.store.MediaStore;
 import net.pms.store.ThumbnailSource;
 import net.pms.store.ThumbnailStore;
 import net.pms.util.SimpleThreadFactory;
@@ -180,15 +179,6 @@ public class RadioBrowser4j {
 		}
 		mediaInfo.setLastExternalLookup(System.currentTimeMillis());
 		Runnable r = () -> {
-			try {
-				// wait until MediaStore Workers release before starting
-				MediaStore.waitWorkers();
-				//ensure mediaInfo is not parsing
-				mediaInfo.waitMediaParsing(10);
-			} catch (InterruptedException ex) {
-				Thread.currentThread().interrupt();
-				return;
-			}
 			if (!StringUtils.isBlank(radioBrowserUUID) && RadioBrowser4j.getWebStreamMetadata(mediaInfo, uri, radioBrowserUUID)) {
 				MediaTableFiles.insertOrUpdateData(uri, 0, Format.AUDIO, mediaInfo);
 			}
