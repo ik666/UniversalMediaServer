@@ -152,7 +152,7 @@ public final class MediaTableThumbnails extends MediaTable {
 	 * @param connection the db connection
 	 * @param thumbnail
 	 */
-	public static synchronized Long setThumbnail(final Connection connection, final DLNAThumbnail thumbnail) {
+	public static Long setThumbnail(final Connection connection, final DLNAThumbnail thumbnail) {
 		String md5Hash = DigestUtils.md5Hex(thumbnail.getBytes(false));
 		Long existingId = getThumbnailId(connection, md5Hash);
 		if (existingId != null) {
