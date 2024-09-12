@@ -17,10 +17,12 @@
 package net.pms.store;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Set;
 import java.util.StringTokenizer;
-import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.ConcurrentHashMap;
 import net.pms.PMS;
 import net.pms.dlna.DLNAThumbnailInputStream;
 import net.pms.encoders.TranscodingSettings;
@@ -59,7 +61,7 @@ public class StoreContainer extends StoreResource {
 	 *
 	 * This is only valid when the StoreResource is of the container type.
 	 */
-	private final List<StoreResource> children = new CopyOnWriteArrayList<>();
+	private final Set<StoreResource> children = ConcurrentHashMap.newKeySet();
 
 	/**
 	 * The numerical ID (1-based index) assigned to the last child of this
@@ -327,7 +329,7 @@ public class StoreContainer extends StoreResource {
 	 * @return List of children objects.
 	 */
 	public List<StoreResource> getChildren() {
-		return children;
+		return new ArrayList<>(children);
 	}
 
 	/**
@@ -388,7 +390,7 @@ public class StoreContainer extends StoreResource {
 				// Replace
 				child.setParent(this);
 				renderer.getMediaStore().replaceWeakResource(found, child);
-				children.set(children.indexOf(found), child);
+				children.add(child);
 			}
 			// Renew
 			addChild(child, false, true);
@@ -457,7 +459,9 @@ public class StoreContainer extends StoreResource {
 
 	protected void sortChildrenIfNeeded() {
 		if (isChildrenSorted()) {
-			StoreResourceSorter.sortResourcesByDefault(children);
+			List<StoreResource> sorted = StoreResourceSorter.sortResourcesByDefault(getChildren());
+			children.clear();
+			children.addAll(sorted);
 		}
 	}
 
@@ -658,10 +662,11 @@ public class StoreContainer extends StoreResource {
 	// Returns the index of the given child resource id, or -1 if not found
 	public int indexOf(String objectId) {
 		// Use the index id string only, omitting any trailing filename
+		List<StoreResource> childs = getChildren();
 		String resourceId = StringUtils.substringBefore(objectId, "/");
 		if (resourceId != null) {
-			for (int i = 0; i < children.size(); i++) {
-				if (resourceId.equals(children.get(i).getResourceId())) {
+			for (int i = 0; i < childs.size(); i++) {
+				if (resourceId.equals(childs.get(i).getResourceId())) {
 					return i;
 				}
 			}

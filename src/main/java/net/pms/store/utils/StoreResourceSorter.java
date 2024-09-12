@@ -91,11 +91,11 @@ public class StoreResourceSorter {
 		}
 	}
 
-	public static void sortResourcesByDefault(List<StoreResource> resources) {
-		sortResourcesByDefault(resources, null);
+	public static List<StoreResource> sortResourcesByDefault(List<StoreResource> resources) {
+		return sortResourcesByDefault(resources, null);
 	}
 
-	public static void sortResourcesByDefault(List<StoreResource> resources, String lang) {
+	public static List<StoreResource> sortResourcesByDefault(List<StoreResource> resources, String lang) {
 		int sortMethod = CONFIGURATION.getSortMethod();
 		switch (sortMethod) {
 			case SORT_TITLE_ASC -> {
@@ -123,6 +123,7 @@ public class StoreResourceSorter {
 				sortResourcesByTitle(resources, lang);
 			}
 		}
+		return resources;
 	}
 
 	public static void sortResourcesByTitle(List<StoreResource> resources) {

@@ -54,7 +54,7 @@ public class MediaDatabase extends Database {
 	public final void onOpening(boolean force) {
 		try {
 			try (Connection c = getConnection()) {
-				c.createStatement().execute("SET SESSION CHARACTERISTICS AS TRANSACTION ISOLATION LEVEL SERIALIZABLE");
+				c.createStatement().execute("SET SESSION CHARACTERISTICS AS TRANSACTION ISOLATION LEVEL SNAPSHOT");
 			}
 			checkTables(force);
 		} catch (SQLException se) {
