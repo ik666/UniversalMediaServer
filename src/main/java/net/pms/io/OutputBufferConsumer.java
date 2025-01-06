@@ -56,7 +56,7 @@ public class OutputBufferConsumer extends OutputConsumer {
 			}
 			//LOGGER.debug("Finished to read");
 		} catch (IOException ioe) {
-			LOGGER.debug("Error consuming stream of spawned process: " + ioe.getMessage());
+			LOGGER.error("Error consuming stream of spawned process: " + ioe.getMessage(), ioe);
 		} finally {
 			//LOGGER.trace("Closing read from pipe");
 			if (inputStream != null) {
