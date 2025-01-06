@@ -213,7 +213,7 @@ public class FFmpegAudio extends FFMpegVideo {
 				}
 			}
 		}
-
+		cmdList.add("-y");
 		cmdList.add("pipe:");
 
 		String[] cmdArray = new String[ cmdList.size() ];
