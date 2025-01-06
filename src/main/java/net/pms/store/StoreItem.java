@@ -93,7 +93,6 @@ public abstract class StoreItem extends StoreResource {
 	 */
 	private TranscodingSettings transcodingSettings;
 	private boolean skipTranscode = false;
-	private ProcessWrapper externalProcess;
 
 	private Format format;
 	private int specificType;
@@ -903,6 +902,8 @@ public abstract class StoreItem extends StoreResource {
 		}
 
 		// (Re)start transcoding process if necessary
+		ProcessWrapper externalProcess = null;
+
 		if (externalProcess == null || externalProcess.isDestroyed() || hlsConfiguration != null) {
 			// First playback attempt => start new transcoding process
 			LOGGER.debug("Starting transcode/remux of " + getName() + " with media info: " + mediaInfo);
@@ -926,42 +927,6 @@ public abstract class StoreItem extends StoreResource {
 				}
 
 				LOGGER.trace("Finished sleeping for " + params.getWaitBeforeStart() + " milliseconds");
-			}
-		} else if (params.getTimeSeek() > 0 && mediaInfo != null && mediaInfo.isMediaParsed() && mediaInfo.getDurationInSeconds() > 0) {
-
-			// Time seek request => stop running transcode process and start a new one
-			LOGGER.debug("Requesting time seek: " + params.getTimeSeek() + " seconds");
-
-			if (lastTimeSeek == params.getTimeSeek()) {
-				LOGGER.debug("Duplicate time seek request: " + params.getTimeSeek() + " seconds, ignoring");
-			} else {
-
-				LOGGER.debug("Setting last time seek to: " + params.getTimeSeek() + " seconds");
-				lastTimeSeek = params.getTimeSeek();
-
-				params.setMinBufferSize(1);
-
-				Runnable r = () -> {
-					externalProcess.stopProcess();
-				};
-
-				new Thread(r, "External Process Stopper").start();
-
-				setLastStartSystemTime(System.currentTimeMillis());
-				ProcessWrapper newExternalProcess = getTranscodingSettings().getEngine().launchTranscode(this, mediaInfo, params);
-
-				try {
-					Thread.sleep(1000);
-				} catch (InterruptedException e) {
-					LOGGER.error(null, e);
-					Thread.currentThread().interrupt();
-				}
-
-				if (newExternalProcess == null) {
-					LOGGER.trace("External process instance is null... sounds not good");
-				}
-
-				externalProcess = newExternalProcess;
 			}
 		}
 
@@ -991,12 +956,7 @@ public abstract class StoreItem extends StoreResource {
 		// hang
 		// instead of exiting
 		if (is == null && !externalProcess.isDestroyed()) {
-			Runnable r = () -> {
-				LOGGER.error("External input stream instance is null... stopping process");
-				externalProcess.stopProcess();
-			};
-
-			new Thread(r, "Hanging External Process Stopper").start();
+			externalProcess.stopProcess();
 		}
 
 		return is;
