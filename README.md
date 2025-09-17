@@ -29,6 +29,13 @@ The features listed below are supported on the server side. This means you don't
     - delete playlists
     - add songs to playlist
     - remove songs from playlist
+  - Audio Addict Network Support
+    - Classical Radio
+    - Radio Tunes
+    - Rock Radio
+    - Jazz Radio
+    - Zen Radio
+    - DI.fm
   - Album art updates for resources (i.e. internet radio station) 
 
 
