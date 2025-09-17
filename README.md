@@ -98,3 +98,9 @@ docker-compose down
 ```
 
 There is also a [docker installation example](https://sf666.github.io/nextcp2/quick_install/docker/) if you want to use this fork together with NextCP/2 control point in the same environment.
+
+## JAR file replacement installation
+
+You can use the original installation method of UMS and replace the jar file from the [release page](https://github.com/ik666/UniversalMediaServer/releases).
+
+
