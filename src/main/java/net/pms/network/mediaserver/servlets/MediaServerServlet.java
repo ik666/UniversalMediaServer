@@ -16,6 +16,10 @@
  */
 package net.pms.network.mediaserver.servlets;
 
+import jakarta.servlet.AsyncContext;
+import jakarta.servlet.annotation.WebServlet;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import java.io.BufferedOutputStream;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -24,19 +28,10 @@ import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.Locale;
 import java.util.TimeZone;
-import org.apache.commons.lang3.StringUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import jakarta.servlet.AsyncContext;
-import jakarta.servlet.annotation.WebServlet;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
-import net.pms.configuration.RendererConfigurations;
 import net.pms.dlna.DLNAImageInputStream;
 import net.pms.dlna.DLNAImageProfile;
 import net.pms.dlna.DLNAThumbnailInputStream;
@@ -68,10 +63,12 @@ import net.pms.store.StoreResource;
 import net.pms.util.ByteRange;
 import net.pms.util.FullyPlayed;
 import net.pms.util.Range;
-import net.pms.util.SortedHeaderMap;
 import net.pms.util.StringUtil;
 import net.pms.util.SubtitleUtils;
 import net.pms.util.TimeRange;
+import org.apache.commons.lang3.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * This is the core stream server.
@@ -107,61 +104,51 @@ public class MediaServerServlet extends MediaServerHttpServlet {
 				return;
 			}
 
-			if (CONFIGURATION.isAuthenticationEnabled()) {
-				// Authentication enabled: the renderer is bound to the browse UUID (2-box setup)
-				// and access is filtered per account/renderer.
-				renderer = ConnectedRenderers.getUuidRenderer(mediaServerRequest.getUuid());
+			//find renderer by uuid
+			renderer = ConnectedRenderers.getUuidRenderer(mediaServerRequest.getUuid());
 
-				if (renderer == null) {
-					renderer = ConnectedRenderers.getRendererBySocketAddress(getInetAddress(req));
-					if (renderer != null && !mediaServerRequest.getUuid().equals(renderer.getId())) {
-						if (LOGGER.isTraceEnabled()) {
-							LOGGER.trace("Recognized media renderer \"{}\" is not matching UUID \"{}\"", renderer.getRendererName(), mediaServerRequest.getUuid());
-						}
-					}
-				}
-
-				if (renderer == null) {
-					// If uuid not known, it mean the renderer is not registred
+			if (renderer == null) {
+				//find renderer by uuid and ip for non registred upnp devices
+				renderer = ConnectedRenderers.getRendererBySocketAddress(getInetAddress(req));
+				if (renderer != null && !mediaServerRequest.getUuid().equals(renderer.getId())) {
 					if (LOGGER.isTraceEnabled()) {
-						logHttpServletRequest(req, "");
+						LOGGER.trace("Recognized media renderer \"{}\" is not matching UUID \"{}\"", renderer.getRendererName(), mediaServerRequest.getUuid());
 					}
-					//Forbidden
-					respondForbidden(req, resp);
-					return;
-				}
-
-				if (!renderer.isAllowed()) {
-					if (LOGGER.isTraceEnabled()) {
-						logHttpServletRequest(req, "", getRendererName(req, renderer));
-						LOGGER.trace("Recognized media renderer \"{}\" is not allowed", renderer.getRendererName());
-					}
-					//Unauthorized
-					respondUnauthorized(req, resp);
-					return;
-				}
-			} else {
-				// Authentication disabled: flexible 3-box UPnP setup. The browse UUID in the URL
-				// belongs to the control point, not the playback renderer, so identify the real
-				// renderer just-in-time from the request headers (User-Agent etc.) and IP.
-				// Transcoding is then resolved for that renderer via its own media store.
-				SortedHeaderMap headerMap = getHeaderMapFromRequest(req);
-				renderer = ConnectedRenderers.getRendererConfigurationByHeaders(headerMap, getInetAddress(req));
-				if (renderer == null) {
-					if (LOGGER.isTraceEnabled()) {
-						LOGGER.trace("Renderer not identified by header, using default renderer. Request headers were: {}", headerMap);
-					}
-					renderer = RendererConfigurations.getDefaultRenderer();
+					/**
+					 * here, that mean the originated renderer advised is no more available.
+					 * It may be a caster/proxy control point, so let change to the real renderer.
+					 * fixme : non-renderer should advise a special uuid.
+					 * renderer = null;
+					 */
 				}
 			}
-			LOGGER.trace("Using {} renderer for this request", renderer.getRendererName());
+
+			if (renderer == null) {
+				// If uuid not known, it mean the renderer is not registred
+				if (LOGGER.isTraceEnabled()) {
+					logHttpServletRequest(req, "");
+				}
+				//Forbidden
+				respondForbidden(req, resp);
+				return;
+			}
+
+			if (!renderer.isAllowed()) {
+				if (LOGGER.isTraceEnabled()) {
+					logHttpServletRequest(req, "", getRendererNameForLogging(req, renderer));
+					LOGGER.trace("Recognized media renderer \"{}\" is not allowed", renderer.getRendererName());
+				}
+				//Unauthorized
+				respondUnauthorized(req, resp);
+				return;
+			}
 
 			if (req.getHeader("X-PANASONIC-DMP-Profile") != null) {
 				PanasonicDmpProfiles.parsePanasonicDmpProfiles(req.getHeader("X-PANASONIC-DMP-Profile"), renderer);
 			}
 
 			if (LOGGER.isTraceEnabled()) {
-				logHttpServletRequest(req, null, getRendererName(req, renderer));
+				logHttpServletRequest(req, null, getRendererNameForLogging(req, renderer));
 			}
 
 			String method = req.getMethod().toUpperCase();
@@ -195,22 +182,14 @@ public class MediaServerServlet extends MediaServerHttpServlet {
 			}
 		} catch (IOException e) {
 			String message = e.getMessage();
-			if (message != null) {
+			if (message != null && LOGGER.isTraceEnabled()) {
 				if (message.equals("Connection reset by peer")) {
-					LOGGER.trace("Http request from {}: {}", getRendererName(req, renderer), message);
+					LOGGER.trace("Http request from {}: {}", getRendererNameForLogging(req, renderer), message);
 				}
 			} else {
 				LOGGER.error("Http request error:", e);
 			}
 		}
-	}
-
-	private SortedHeaderMap getHeaderMapFromRequest(HttpServletRequest req) {
-		SortedHeaderMap headerMap = new SortedHeaderMap();
-		for (String headerField : Collections.list(req.getHeaderNames())) {
-			headerMap.put(headerField, req.getHeader(headerField));
-		}
-		return headerMap;
 	}
 
 	private static void sendResponse(HttpServletRequest req, HttpServletResponse resp, final Renderer renderer, int code, String message, String contentType) throws IOException {
@@ -221,7 +200,7 @@ public class MediaServerServlet extends MediaServerHttpServlet {
 			resp.setContentLength(0);
 			resp.setStatus(204);
 			if (LOGGER.isTraceEnabled()) {
-				logHttpServletResponse(req, resp, null, false, getRendererName(req, renderer));
+				logHttpServletResponse(req, resp, null, false, getRendererNameForLogging(req, renderer));
 			}
 			return;
 		}
@@ -239,7 +218,7 @@ public class MediaServerServlet extends MediaServerHttpServlet {
 			}
 		}
 		if (LOGGER.isTraceEnabled()) {
-			logHttpServletResponse(req, resp, message, false, getRendererName(req, renderer));
+			logHttpServletResponse(req, resp, message, false, getRendererNameForLogging(req, renderer));
 		}
 	}
 
@@ -256,7 +235,7 @@ public class MediaServerServlet extends MediaServerHttpServlet {
 			resp.setContentLength(0);
 			resp.setStatus(204);
 			if (LOGGER.isTraceEnabled()) {
-				logHttpServletResponse(req, resp, null, false, getRendererName(req, renderer));
+				logHttpServletResponse(req, resp, null, false, getRendererNameForLogging(req, renderer));
 			}
 			async.complete();
 			return;
@@ -286,7 +265,7 @@ public class MediaServerServlet extends MediaServerHttpServlet {
 		// Send the response headers to the client.
 		resp.setStatus(code);
 		if (LOGGER.isTraceEnabled()) {
-			logHttpServletResponse(req, resp, null, true, getRendererName(req, renderer));
+			logHttpServletResponse(req, resp, null, true, getRendererNameForLogging(req, renderer));
 		}
 		// send only if no HEAD method is being used.
 		if (writeStream && !HEAD.equalsIgnoreCase(req.getMethod())) {
@@ -315,10 +294,6 @@ public class MediaServerServlet extends MediaServerHttpServlet {
 			StartStopListener startStopListener = null;
 			InputStream inputStream = null;
 			long cLoverride = -2; // 0 and above are valid Content-Length values, -1 means omit
-
-			// TEMPORARY: log whether the renderer requests SHOUTcast/Icecast in-band metadata.
-			LOGGER.info("[ICY-CHECK] item='{}' renderer='{}' Icy-MetaData='{}' User-Agent='{}'",
-				item.getName(), getRendererName(req, renderer), req.getHeader("Icy-MetaData"), req.getHeader("User-Agent"));
 
 			if (req.getHeader("transfermode.dlna.org") != null) {
 				resp.setHeader("TransferMode.DLNA.ORG", req.getHeader("transfermode.dlna.org"));
@@ -350,7 +325,7 @@ public class MediaServerServlet extends MediaServerHttpServlet {
 					if (inputStream != null) {
 						if (filename.endsWith(".ts")) {
 							resp.setContentType(HTTPResource.MPEGTS_BYTESTREAM_TYPEMIME);
-							startStopListener = new StartStopListener(req.getRemoteHost(), item);
+							startStopListener = new StartStopListener(req.getRemoteAddr(), item);
 							LOGGER.trace("Sending inputstream for " + filename);
 							sendResponse(req, resp, renderer, 200, inputStream, StoreResource.TRANS_SIZE, true, startStopListener);
 						} else if (filename.endsWith(".vtt")) {
@@ -486,10 +461,6 @@ public class MediaServerServlet extends MediaServerHttpServlet {
 						range.setStart(0L);
 						range.setEnd(0L);
 					}
-					if (item instanceof IcyMetadataSource icyDiag) {
-						LOGGER.debug("ICY decision for '{}': Icy-MetaData='{}', isIcyMetadataEnabled={}",
-							item.getName(), req.getHeader("Icy-MetaData"), icyDiag.isIcyMetadataEnabled());
-					}
 					if ("1".equals(req.getHeader("Icy-MetaData")) && item instanceof IcyMetadataSource icySource && icySource.isIcyMetadataEnabled()) {
 						// Renderer asked for SHOUTcast/Icecast in-band metadata: advertise the
 						// interval and interleave the metadata blocks into the stream.
@@ -579,7 +550,7 @@ public class MediaServerServlet extends MediaServerHttpServlet {
 					}
 				} else {
 					if (!isVideoThumbnailRequest && GET.equals(req.getMethod().toUpperCase())) {
-						startStopListener = new StartStopListener(req.getRemoteHost(), item);
+						startStopListener = new StartStopListener(req.getRemoteAddr(), item);
 					}
 
 					// Try to determine the content type of the file
@@ -907,7 +878,10 @@ public class MediaServerServlet extends MediaServerHttpServlet {
 		return SDF.format(new Date(10000000000L + System.currentTimeMillis()));
 	}
 
-	private static String getRendererName(HttpServletRequest req, Renderer renderer) {
+	/**
+	 * Builds the renderer name for logging purposes only.
+	 */
+	private static String getRendererNameForLogging(HttpServletRequest req, Renderer renderer) {
 		String rendererName;
 		if (renderer != null) {
 			if (StringUtils.isNotBlank(renderer.getRendererName())) {
@@ -926,7 +900,7 @@ public class MediaServerServlet extends MediaServerHttpServlet {
 		}
 		if (req != null) {
 			rendererName +=
-					" (" + req.getRemoteHost() +
+					" (" + req.getRemoteAddr() +
 					":" + req.getRemotePort() + ")";
 		}
 		return rendererName;
