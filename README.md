@@ -15,8 +15,13 @@ migrated into the UMS main development branch.
 Major improvement over the original implementation is an accurate renderer identification in a three-box setup — a configuration widely used by users who prioritize high - quality audio playback. With this enhancement, you can control your UPnP streaming devices through your preferred control point applications, such as BubbleUPnP, DENON HEOS App or the LINN App. The correct renderer configuration will be used, no matter to which renderer device you stream the content.
 
 
-> [!CAUTION]
-> To support the 3-box setup, the UMS "authorization" feature has been disabled on the server side. The UI let's you still configure it, but it will be ignored.
+> [!IMPORTANT]
+> The 3-box renderer identification is only active when the **authentication service is disabled**.
+> Authentication is no longer removed by the fork — it is now a configuration switch:
+> * **authentication service enabled** → the original UMS behaviour applies unchanged: the renderer is bound to the browsing UUID and access is filtered per account (best suited to a 2-box setup).
+> * **authentication service disabled** → the flexible 3-box mode takes over and the playback renderer is identified just-in-time from the media request.
+>
+> You can toggle the authentication service at runtime in the web UI (*Settings → Accounts*); the fork applies the change without a restart.
 
 ## Additional features supported by UMS fork
 
@@ -98,6 +103,16 @@ docker-compose down
 ```
 
 There is also a [docker installation example](https://sf666.github.io/nextcp2/quick_install/docker/) if you want to use this fork together with NextCP/2 control point in the same environment.
+
+## Native installers (Windows & macOS)
+
+Native, self-contained builds are produced automatically for every version tag and published on the [release page](https://github.com/ik666/UniversalMediaServer/releases):
+
+  - **Windows** — NSIS installer (`UMS-x86_64.exe`), 64-bit only, with a bundled Java runtime.
+  - **macOS (Apple Silicon)** — application bundle shipped as `UMS-macos-arm64.zip`, with a bundled Java runtime.
+
+> [!NOTE]
+> The macOS build is not code-signed, so on first launch macOS Gatekeeper will warn about an unidentified developer. Open it via right-click → *Open* (or clear the quarantine flag with `xattr -dr com.apple.quarantine "Universal Media Server.app"`).
 
 ## JAR file replacement installation
 
