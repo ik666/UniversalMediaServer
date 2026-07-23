@@ -563,7 +563,9 @@ public class StoreContainer extends StoreResource {
 		}
 
 		if (FileUtil.isUrl(thumbnailIcon)) {
-			return DLNAThumbnailInputStream.toThumbnailInputStream(HTTPResource.downloadAndSend(thumbnailIcon, true));
+			// Downloaded, decoded and cached once per URL, so container folders whose thumbnail is a
+			// remote image (e.g. AudioAddict show folders) are not re-fetched and re-decoded on every browse.
+			return ThumbnailStore.getThumbnailInputStreamForUrl(thumbnailIcon);
 		} else {
 			return DLNAThumbnailInputStream.toThumbnailInputStream(HTTPResource.getResourceInputStream(thumbnailIcon));
 		}

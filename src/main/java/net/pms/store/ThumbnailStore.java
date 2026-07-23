@@ -16,11 +16,13 @@
  */
 package net.pms.store;
 
+import java.io.IOException;
 import java.lang.ref.WeakReference;
 import java.sql.Connection;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
 import org.slf4j.Logger;
@@ -29,15 +31,21 @@ import net.pms.database.MediaDatabase;
 import net.pms.database.MediaTableFiles;
 import net.pms.database.MediaTableTVSeries;
 import net.pms.database.MediaTableThumbnails;
+import net.pms.dlna.DLNAProfileException;
 import net.pms.dlna.DLNAThumbnail;
 import net.pms.dlna.DLNAThumbnailInputStream;
 import net.pms.external.JavaHttpClient;
+import net.pms.network.HTTPResource;
 
 public class ThumbnailStore {
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(ThumbnailStore.class.getName());
 
 	private static final Map<Long, WeakReference<DLNAThumbnail>> STORE = new HashMap<>();
+	// Thumbnails already generated for a given remote image URL. Lets callers whose items are
+	// rebuilt on every browse (e.g. AudioAddict Events) reuse the decoded thumbnail instead of
+	// re-downloading and re-decoding the full-size image on a request thread.
+	private static final Map<String, Long> URL_THUMBNAIL_IDS = new ConcurrentHashMap<>();
 	private static final BlockingQueue<ThumbnailUpdateRequest> THUMBNAIL_UPDATE_QUEUE = new LinkedBlockingQueue<>();
 	private static final AtomicBoolean QUEUE_WORKER_RUNNING = new AtomicBoolean(false);
 	private static final String QUEUE_WORKER_THREAD_NAME = "thumbnail-update-worker";
@@ -245,6 +253,46 @@ public class ThumbnailStore {
 				MediaDatabase.close(connection);
 			}
 		}
+	}
+
+	/**
+	 * Returns a thumbnail for a remote image URL, generating it on first use and reusing it
+	 * afterwards. The decoded thumbnail is stored (DB-backed) and remembered per URL, so callers
+	 * whose items are rebuilt on every browse (e.g. AudioAddict Events / show folders) do not
+	 * re-download and re-decode the full-size image on a request thread &mdash; which for multi-MB
+	 * covers takes seconds and gets aborted by the client under a burst, leaving thumbnails blank.
+	 *
+	 * @param url the remote image URL.
+	 * @return the thumbnail input stream, or {@code null} if it could not be produced.
+	 * @throws IOException on download failure.
+	 */
+	public static DLNAThumbnailInputStream getThumbnailInputStreamForUrl(String url) throws IOException {
+		if (url == null) {
+			return null;
+		}
+		Long cachedId = URL_THUMBNAIL_IDS.get(url);
+		if (cachedId != null) {
+			DLNAThumbnailInputStream cached = getThumbnailInputStream(cachedId);
+			if (cached != null) {
+				return cached;
+			}
+		}
+		long start = System.currentTimeMillis();
+		DLNAThumbnailInputStream generated = DLNAThumbnailInputStream.toThumbnailInputStream(HTTPResource.downloadAndSend(url, true));
+		if (generated != null) {
+			try {
+				Long id = getId(generated.getThumbnail());
+				if (id != null) {
+					URL_THUMBNAIL_IDS.put(url, id);
+				}
+			} catch (DLNAProfileException e) {
+				LOGGER.trace("Could not cache thumbnail for {}: {}", url, e.getMessage());
+			}
+			if (LOGGER.isDebugEnabled()) {
+				LOGGER.debug("Prepared thumbnail from {} in {} ms", url, System.currentTimeMillis() - start);
+			}
+		}
+		return generated;
 	}
 
 }

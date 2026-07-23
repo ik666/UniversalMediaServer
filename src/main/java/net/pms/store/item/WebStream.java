@@ -23,10 +23,8 @@ import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URL;
 import java.util.Map;
-import net.pms.dlna.DLNAProfileException;
 import net.pms.dlna.DLNAThumbnailInputStream;
 import net.pms.external.radiobrowser.RadioBrowser4j;
-import net.pms.network.HTTPResource;
 import net.pms.network.HTTPResourceAuthenticator;
 import net.pms.renderers.Renderer;
 import net.pms.store.MediaInfoStore;
@@ -86,23 +84,12 @@ public class WebStream extends StoreItem {
 			result = getMediaInfo().getThumbnailInputStream();
 		}
 		if (result == null && thumbURL != null) {
-			long start = System.currentTimeMillis();
-			result = DLNAThumbnailInputStream.toThumbnailInputStream(
-					FileUtil.isUrl(thumbURL) ? HTTPResource.downloadAndSend(thumbURL, true) : new FileInputStream(thumbURL)
-			);
-			if (result != null) {
-				// Cache the generated thumbnail so it is not re-fetched and re-decoded on every request. 
-				if (getMediaInfo() != null) {
-					try {
-						getMediaInfo().setThumbnailId(ThumbnailStore.getId(result.getThumbnail()));
-					} catch (DLNAProfileException e) {
-						LOGGER.trace("Could not cache thumbnail for \"{}\": {}", fluxName, e.getMessage());
-					}
-				}
-				if (LOGGER.isDebugEnabled()) {
-					LOGGER.debug("Prepared thumbnail for \"{}\" from {} in {} ms", fluxName, thumbURL, System.currentTimeMillis() - start);
-				}
-			}
+			// Remote URLs are downloaded, decoded and cached once per URL by ThumbnailStore, so
+			// repeated browses (AudioAddict Events rebuild their items every time) don't re-fetch and
+			// re-decode the full-size image on a request thread.
+			result = FileUtil.isUrl(thumbURL)
+					? ThumbnailStore.getThumbnailInputStreamForUrl(thumbURL)
+					: DLNAThumbnailInputStream.toThumbnailInputStream(new FileInputStream(thumbURL));
 		}
 		return result != null ? result : super.getThumbnailInputStream();
 	}
