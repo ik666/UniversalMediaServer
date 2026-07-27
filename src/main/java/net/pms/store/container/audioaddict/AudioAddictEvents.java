@@ -12,15 +12,15 @@ import net.pms.store.StoreContainer;
 /**
  * Upcoming events (scheduled show episodes) of a network. Each event contributes the current,
  * already aired episode as a directly playable item (when available) plus a container holding the
- * show's older, on-demand episodes ({@link AudioAddictShowEpisodes}). The episode content URLs are
- * signed and expire, so the children are (re)resolved on every browse instead of being cached.
+ * show's older, on-demand episodes. The episode content URLs are signed and expire, so the children
+ * are (re)resolved on every browse instead of being cached.
  */
 public class AudioAddictEvents extends StoreContainer {
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(AudioAddictEvents.class.getName());
 
 	private final Platform network;
-	private volatile boolean populated = false;
+	private volatile long builtAt = 0;
 
 	public AudioAddictEvents(Renderer renderer, Platform network) {
 		super(renderer, "Events", network.albumArt);
@@ -29,11 +29,10 @@ public class AudioAddictEvents extends StoreContainer {
 
 	@Override
 	public synchronized void discoverChildren() {
-		if (populated) {
+		if (!needsRebuild()) {
 			return;
 		}
-		addEvents();
-		populated = true;
+		rebuild();
 	}
 
 	@Override
@@ -44,9 +43,17 @@ public class AudioAddictEvents extends StoreContainer {
 
 	@Override
 	public synchronized void doRefreshChildren() {
+		rebuild();
+	}
+
+	private void rebuild() {
 		clearChildren();
 		addEvents();
-		populated = true;
+		builtAt = System.currentTimeMillis();
+	}
+
+	private boolean needsRebuild() {
+		return getChildren().isEmpty() || builtAt < AudioAddictService.get().getUpcomingEventsFetchedAt(network);
 	}
 
 	private void addEvents() {
