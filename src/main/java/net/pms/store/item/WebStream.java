@@ -87,9 +87,7 @@ public class WebStream extends StoreItem {
 			// Remote URLs are downloaded, decoded and cached once per URL by ThumbnailStore, so
 			// repeated browses (AudioAddict Events rebuild their items every time) don't re-fetch and
 			// re-decode the full-size image on a request thread.
-			result = FileUtil.isUrl(thumbURL)
-					? ThumbnailStore.getThumbnailInputStreamForUrl(thumbURL)
-					: DLNAThumbnailInputStream.toThumbnailInputStream(new FileInputStream(thumbURL));
+			result = FileUtil.isUrl(thumbURL) ? ThumbnailStore.getThumbnailInputStreamForUrl(thumbURL) : DLNAThumbnailInputStream.toThumbnailInputStream(new FileInputStream(thumbURL));
 		}
 		return result != null ? result : super.getThumbnailInputStream();
 	}
