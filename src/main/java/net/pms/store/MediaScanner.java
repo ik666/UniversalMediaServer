@@ -315,13 +315,10 @@ public class MediaScanner implements SharedContentListener {
 				String parent = parentFile.getAbsolutePath();
 				if (isInSharedFolders(parent) && !parent.equals(filename)) {
 					internalScanFileOrFolder(parent);
+					// Retrying the very same lookup was pointless: scanFileOrFolder only
+					// calls reset(), it never re-runs setSharedContent(), so the parent
+					// cannot have appeared in the store in between.
 					List<StoreResource> systemFileResources = RENDERER.getMediaStore().findSystemFileResources(file);
-					if (systemFileResources.isEmpty()) {
-						if (isInSharedFolders(parent)) {
-							internalScanFileOrFolder(parent);
-							systemFileResources = RENDERER.getMediaStore().findSystemFileResources(file);
-						}
-					}
 					if (!systemFileResources.isEmpty()) {
 						//if it is still empty, it mean the tree is no more accessible
 						for (StoreResource storeResource : systemFileResources) {
@@ -331,7 +328,9 @@ public class MediaScanner implements SharedContentListener {
 							}
 						}
 					} else {
-						LOGGER.warn("Given folder was not found in store : " + file.getAbsolutePath());
+						// A folder that is not in the store yet is a normal state during a
+						// scan, not something the user has to act on.
+						LOGGER.debug("Given folder was not found in store : " + file.getAbsolutePath());
 					}
 				} else {
 					LOGGER.debug("Not in shared folders or parent is current file : " + filename);
