@@ -390,7 +390,7 @@ public class LuceneSearchRequestHandler extends BaseSearchRequestHandler {
 			}
 			case TYPE_PLAYLIST, TYPE_VIDEO, TYPE_IMAGE -> {
 				String sql = getTreeStatement(subtreeId) + "SELECT COUNT(DISTINCT F.ID) FROM FTL_SEARCH_DATA('%s', %d, %d) FT " +
-					"JOIN FILES F ON F.ID = FT.KEYS[1] JOIN tree ON F.FILENAME = tree.name " +
+					"JOIN FILES F ON F.ID = FT.KEYS[1] " +
 					getTreeWhereStatement("FILES", subtreeId, false);
 				return getFormattedLuceneString(luceneQuery, sql, false);
 			}
