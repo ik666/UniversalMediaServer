@@ -93,6 +93,30 @@ public class ConfigurationReader {
 	}
 
 	/**
+	 * Returns whether the key is present but holds a blank value, i.e. an empty
+	 * string or nothing but whitespace.
+	 *
+	 * UMS.conf routinely carries keys written out without a value
+	 * (<code>resume =</code>, <code>enable_archive_browsing =</code>, ...). For
+	 * those, commons-configuration2 does not fall back to the supplied default
+	 * but raises a ConversionException. The typed getters below catch it and
+	 * return the default, which is correct but costly: every call allocates a
+	 * throwable and forces the JIT to deoptimize each compiled frame the
+	 * exception unwinds through. In the hot browse and scan paths that happens
+	 * hundreds of thousands of times per media scan.
+	 *
+	 * Treating a blank value as "not configured" keeps those getters free of
+	 * exceptions and matches how {@link #getNonBlankConfigurationString} has
+	 * always handled string keys.
+	 *
+	 * @param key The key to look up.
+	 * @return <code>true</code> if the key holds a blank value.
+	 */
+	private boolean isBlankValue(String key) {
+		return configuration.getProperty(key) instanceof String s && StringUtils.isBlank(s);
+	}
+
+	/**
 	 * Return the <code>int</code> value for a given configuration key. First, the key
 	 * is looked up in the current configuration settings. If it exists and contains a
 	 * valid value, that value is returned. If the key contains an invalid value or
@@ -105,10 +129,14 @@ public class ConfigurationReader {
 	int getInt(String key, int def) {
 		int value;
 
-		try {
-			value = configuration.getInt(key, def);
-		} catch (ConversionException e) {
+		if (isBlankValue(key)) {
 			value = def;
+		} else {
+			try {
+				value = configuration.getInt(key, def);
+			} catch (ConversionException e) {
+				value = def;
+			}
 		}
 
 		log(key, value, def);
@@ -128,10 +156,14 @@ public class ConfigurationReader {
 	long getLong(String key, long def) {
 		long value;
 
-		try {
-			value = configuration.getLong(key, def);
-		} catch (ConversionException e) {
+		if (isBlankValue(key)) {
 			value = def;
+		} else {
+			try {
+				value = configuration.getLong(key, def);
+			} catch (ConversionException e) {
+				value = def;
+			}
 		}
 
 		log(key, value, def);
@@ -151,10 +183,14 @@ public class ConfigurationReader {
 	double getDouble(String key, double def) {
 		double value;
 
-		try {
-			value = configuration.getDouble(key, def);
-		} catch (ConversionException e) {
+		if (isBlankValue(key)) {
 			value = def;
+		} else {
+			try {
+				value = configuration.getDouble(key, def);
+			} catch (ConversionException e) {
+				value = def;
+			}
 		}
 
 		log(key, value, def);
@@ -174,10 +210,14 @@ public class ConfigurationReader {
 	boolean getBoolean(String key, boolean def) {
 		boolean value;
 
-		try {
-			value = configuration.getBoolean(key, def);
-		} catch (ConversionException e) {
+		if (isBlankValue(key)) {
 			value = def;
+		} else {
+			try {
+				value = configuration.getBoolean(key, def);
+			} catch (ConversionException e) {
+				value = def;
+			}
 		}
 
 		log(key, value, def);
