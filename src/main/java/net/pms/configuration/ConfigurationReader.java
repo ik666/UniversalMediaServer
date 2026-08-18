@@ -93,24 +93,7 @@ public class ConfigurationReader {
 	}
 
 	/**
-	 * Returns whether the key is present but holds a blank value, i.e. an empty
-	 * string or nothing but whitespace.
-	 *
-	 * UMS.conf routinely carries keys written out without a value
-	 * (<code>resume =</code>, <code>enable_archive_browsing =</code>, ...). For
-	 * those, commons-configuration2 does not fall back to the supplied default
-	 * but raises a ConversionException. The typed getters below catch it and
-	 * return the default, which is correct but costly: every call allocates a
-	 * throwable and forces the JIT to deoptimize each compiled frame the
-	 * exception unwinds through. In the hot browse and scan paths that happens
-	 * hundreds of thousands of times per media scan.
-	 *
-	 * Treating a blank value as "not configured" keeps those getters free of
-	 * exceptions and matches how {@link #getNonBlankConfigurationString} has
-	 * always handled string keys.
-	 *
-	 * @param key The key to look up.
-	 * @return <code>true</code> if the key holds a blank value.
+	 * Returns whether the key is present but holds a blank value, i.e. an empty string or nothing but whitespace.
 	 */
 	private boolean isBlankValue(String key) {
 		return configuration.getProperty(key) instanceof String s && StringUtils.isBlank(s);
