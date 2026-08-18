@@ -97,6 +97,11 @@ public class MediaScanner implements SharedContentListener {
 	 */
 	private static final int MAX_FILE_SETTLE_WAITS = 120;
 
+	/**
+	 * A file that has not been touched for this long is not being written anymore.
+	 */
+	private static final long FILE_SETTLED_AGE_MS = 10000;
+
 	@GuardedBy("DEFAULT_FOLDERS_LOCK")
 	private static List<String> defaultFolders = null;
 	private static Thread scannerThread;
@@ -467,23 +472,28 @@ public class MediaScanner implements SharedContentListener {
 				if (advise) {
 					LOGGER.debug("File {} was created on the hard drive", filename);
 				}
-				long currentSize = file.length();
-				//wait 500 ms
-				Thread.sleep(500);
-				//Check if size changed (copying, downloading)
-				int waits = 0;
-				while (file.exists() && (currentSize != file.length() || FileUtil.isLocked(file))) {
-					//loop until file size is not changing anymore and file is unlocked.
-					if (waits++ >= MAX_FILE_SETTLE_WAITS) {
-						LOGGER.debug("Giving up waiting for file {} to be fully written", filename);
-						synchronized (FILES_PARSING) {
-							FILES_PARSING.remove(filename);
-						}
-						return;
-					}
-					LOGGER.trace("Waiting until file {} is fully written", filename);
-					currentSize = file.length();
+				// Watching a file settle costs at least the 500 ms per file and on a. Only watch what can still be in flight.
+				if (System.currentTimeMillis() - file.lastModified() < FILE_SETTLED_AGE_MS || FileUtil.isLocked(file)) {
+					long currentSize = file.length();
+					//wait 500 ms
 					Thread.sleep(500);
+					//Check if size changed (copying, downloading)
+					int waits = 0;
+					while (file.exists() && (currentSize != file.length() || FileUtil.isLocked(file))) {
+						//loop until file size is not changing anymore and file is unlocked.
+						if (waits++ >= MAX_FILE_SETTLE_WAITS) {
+							LOGGER.debug("Giving up waiting for file {} to be fully written", filename);
+							synchronized (FILES_PARSING) {
+								FILES_PARSING.remove(filename);
+							}
+							return;
+						}
+						LOGGER.trace("Waiting until file {} is fully written", filename);
+						currentSize = file.length();
+						Thread.sleep(500);
+					}
+				} else {
+					LOGGER.trace("File {} was last modified a while ago, not waiting for it to settle", filename);
 				}
 				//here the file should be fully written, deleted or moved.
 				synchronized (FILES_PARSING) {
