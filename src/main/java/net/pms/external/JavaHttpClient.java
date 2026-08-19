@@ -30,6 +30,7 @@ import java.time.Duration;
 import java.util.Base64;
 import java.util.concurrent.CompletionException;
 import java.util.Map;
+import java.util.function.BiPredicate;
 import net.pms.PMS;
 import net.pms.dlna.DLNAThumbnail;
 import net.pms.image.ImageFormat;
@@ -45,6 +46,13 @@ import org.slf4j.LoggerFactory;
 public class JavaHttpClient {
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(JavaHttpClient.class);
+
+	/**
+	 * HttpHeaders.of() throws a NullPointerException on a null filter, so the fallback
+	 * of returning empty headers used to throw instead - the caller then saw an NPE
+	 * without a message where it expected an empty result.
+	 */
+	private static final BiPredicate<String, String> EMPTY_HEADER_FILTER = (name, value) -> true;
 
 	private static final int DEFAULT_CONNECT_SECONDS = 5;
 	private static final int DEFAULT_RESPONSE_SECONDS = 15;
@@ -197,10 +205,10 @@ public class JavaHttpClient {
 			return response.headers();
 		} catch (IllegalArgumentException ex) {
 			LOGGER.error("Unable to read headers for {}", uri, ex);
-			return HttpHeaders.of(Map.of(), null);
+			return HttpHeaders.of(Map.of(), EMPTY_HEADER_FILTER);
 		} catch (CompletionException ex) {
 			LOGGER.error("Unable to read headers for {}", uri, ex);
-			return HttpHeaders.of(Map.of(), null);
+			return HttpHeaders.of(Map.of(), EMPTY_HEADER_FILTER);
 		}
 	}
 
@@ -211,7 +219,7 @@ public class JavaHttpClient {
 			return response.headers();
 		} catch (IOException | IllegalArgumentException ex) {
 			LOGGER.error("Unable to read headers for request (InputStream) {}", uri, ex);
-			return HttpHeaders.of(Map.of(), null);
+			return HttpHeaders.of(Map.of(), EMPTY_HEADER_FILTER);
 		}
 	}
 
