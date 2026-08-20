@@ -18,7 +18,6 @@ package net.pms.store.container;
 
 import com.sun.jna.Platform;
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.sql.Connection;
 import net.pms.database.MediaDatabase;
@@ -31,6 +30,7 @@ import net.pms.platform.PlatformUtils;
 import net.pms.renderers.Renderer;
 import net.pms.store.SystemFileResource;
 import net.pms.store.SystemFilesHelper;
+import net.pms.store.ThumbnailStore;
 import net.pms.util.ProcessUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -152,7 +152,7 @@ public class RealFolder extends VirtualFolder implements SystemFileResource {
 		DLNAThumbnailInputStream result = null;
 		try {
 			if (cachedThumbnail != null) {
-				result = DLNAThumbnailInputStream.toThumbnailInputStream(new FileInputStream(cachedThumbnail));
+				result = ThumbnailStore.getThumbnailInputStreamForFile(cachedThumbnail);
 			} else if (getMediaInfo() != null && getMediaInfo().getThumbnail() != null) {
 				result = getMediaInfo().getThumbnailInputStream();
 			}

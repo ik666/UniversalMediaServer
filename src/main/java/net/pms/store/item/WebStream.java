@@ -16,7 +16,7 @@
  */
 package net.pms.store.item;
 
-import java.io.FileInputStream;
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.MalformedURLException;
@@ -84,10 +84,10 @@ public class WebStream extends StoreItem {
 			result = getMediaInfo().getThumbnailInputStream();
 		}
 		if (result == null && thumbURL != null) {
-			// Remote URLs are downloaded, decoded and cached once per URL by ThumbnailStore, so
-			// repeated browses (AudioAddict Events rebuild their items every time) don't re-fetch and
-			// re-decode the full-size image on a request thread.
-			result = FileUtil.isUrl(thumbURL) ? ThumbnailStore.getThumbnailInputStreamForUrl(thumbURL) : DLNAThumbnailInputStream.toThumbnailInputStream(new FileInputStream(thumbURL));
+			// Downloaded, decoded and cached by ThumbnailStore, remote URLs per URL and local
+			// files per path, so repeated browses (AudioAddict Events rebuild their items every
+			// time) don't re-fetch and re-decode the full-size image on a request thread.
+			result = FileUtil.isUrl(thumbURL) ? ThumbnailStore.getThumbnailInputStreamForUrl(thumbURL) : ThumbnailStore.getThumbnailInputStreamForFile(new File(thumbURL));
 		}
 		return result != null ? result : super.getThumbnailInputStream();
 	}

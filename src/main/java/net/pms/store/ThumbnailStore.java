@@ -16,7 +16,10 @@
  */
 package net.pms.store;
 
+import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.lang.ref.WeakReference;
 import java.sql.Connection;
 import java.util.HashMap;
@@ -39,6 +42,12 @@ import net.pms.network.HTTPResource;
 
 public class ThumbnailStore {
 
+	/**
+	 * The thumbnail generated for an image file, together with the file stamps it was generated from.
+	 */
+	private record CachedFileThumbnail(long lastModified, long length, long id) {
+	}
+
 	private static final Logger LOGGER = LoggerFactory.getLogger(ThumbnailStore.class.getName());
 
 	private static final Map<Long, WeakReference<DLNAThumbnail>> STORE = new HashMap<>();
@@ -46,6 +55,8 @@ public class ThumbnailStore {
 	// rebuilt on every browse (e.g. AudioAddict Events) reuse the decoded thumbnail instead of
 	// re-downloading and re-decoding the full-size image on a request thread.
 	private static final Map<String, Long> URL_THUMBNAIL_IDS = new ConcurrentHashMap<>();
+	// Thumbnails already generated for a given image file, by absolute path.
+	private static final Map<String, CachedFileThumbnail> FILE_THUMBNAIL_IDS = new ConcurrentHashMap<>();
 	private static final BlockingQueue<ThumbnailUpdateRequest> THUMBNAIL_UPDATE_QUEUE = new LinkedBlockingQueue<>();
 	private static final AtomicBoolean QUEUE_WORKER_RUNNING = new AtomicBoolean(false);
 	private static final String QUEUE_WORKER_THREAD_NAME = "thumbnail-update-worker";
@@ -243,6 +254,9 @@ public class ThumbnailStore {
 	public static void deleteAll() {
 		synchronized (STORE) {
 			STORE.clear();
+			// the ids these remember are about to be deleted
+			URL_THUMBNAIL_IDS.clear();
+			FILE_THUMBNAIL_IDS.clear();
 			Connection connection = null;
 			try {
 				connection = MediaDatabase.getConnectionIfAvailable();
@@ -295,4 +309,41 @@ public class ThumbnailStore {
 		return generated;
 	}
 
+	/**
+	 * Returns a thumbnail for an image file.
+	 */
+	public static DLNAThumbnailInputStream getThumbnailInputStreamForFile(File file) throws IOException {
+		if (file == null || !file.isFile()) {
+			return null;
+		}
+		String path = file.getAbsolutePath();
+		long lastModified = file.lastModified();
+		long length = file.length();
+		CachedFileThumbnail cached = FILE_THUMBNAIL_IDS.get(path);
+		if (cached != null && cached.lastModified() == lastModified && cached.length() == length) {
+			DLNAThumbnailInputStream stored = getThumbnailInputStream(cached.id());
+			if (stored != null) {
+				return stored;
+			}
+		}
+		long start = System.currentTimeMillis();
+		DLNAThumbnailInputStream generated;
+		try (InputStream inputStream = new FileInputStream(file)) {
+			generated = DLNAThumbnailInputStream.toThumbnailInputStream(inputStream);
+		}
+		if (generated != null) {
+			try {
+				Long id = getId(generated.getThumbnail());
+				if (id != null) {
+					FILE_THUMBNAIL_IDS.put(path, new CachedFileThumbnail(lastModified, length, id));
+				}
+			} catch (DLNAProfileException e) {
+				LOGGER.trace("Could not cache thumbnail for {}: {}", path, e.getMessage());
+			}
+			if (LOGGER.isTraceEnabled()) {
+				LOGGER.trace("Prepared thumbnail from {} in {} ms", path, System.currentTimeMillis() - start);
+			}
+		}
+		return generated;
+	}
 }
