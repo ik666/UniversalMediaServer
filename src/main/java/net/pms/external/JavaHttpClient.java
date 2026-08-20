@@ -31,6 +31,7 @@ import java.util.Base64;
 import java.util.concurrent.CompletionException;
 import java.util.Map;
 import java.util.function.BiPredicate;
+import com.google.errorprone.annotations.concurrent.GuardedBy;
 import net.pms.PMS;
 import net.pms.dlna.DLNAThumbnail;
 import net.pms.image.ImageFormat;
@@ -88,13 +89,31 @@ public class JavaHttpClient {
 		}
 	}
 
-	private static HttpClient buildClient() {
-		HttpClient.Builder builder = HttpClient.newBuilder().followRedirects(HttpClient.Redirect.ALWAYS);
-		if (isTimeoutEnabled()) {
-			int sec = Math.max(1, getConnectTimeoutSeconds());
-			builder.connectTimeout(Duration.ofSeconds(sec));
+	// one shared client : each one keeps a selector thread and an executor pool.
+	@GuardedBy("CLIENT_LOCK")
+	private static HttpClient client;
+	@GuardedBy("CLIENT_LOCK")
+	private static int clientConnectSeconds = -1;
+	private static final Object CLIENT_LOCK = new Object();
+
+
+	private static HttpClient getClient() {
+		int connectSeconds = isTimeoutEnabled() ? Math.max(1, getConnectTimeoutSeconds()) : 0;
+		synchronized (CLIENT_LOCK) {
+			if (client == null || clientConnectSeconds != connectSeconds) {
+				HttpClient.Builder builder = HttpClient.newBuilder().followRedirects(HttpClient.Redirect.ALWAYS);
+				if (connectSeconds > 0) {
+					builder.connectTimeout(Duration.ofSeconds(connectSeconds));
+				}
+				HttpClient previous = client;
+				client = builder.build();
+				clientConnectSeconds = connectSeconds;
+				if (previous != null) {
+					previous.shutdown();
+				}
+			}
+			return client;
 		}
-		return builder.build();
 	}
 
 	private static HttpRequest.Builder addRequestTimeout(HttpRequest.Builder builder) {
@@ -129,7 +148,7 @@ public class JavaHttpClient {
 			HttpRequest request = newHttpRequest(uri)
 					.GET()
 					.build();
-			HttpResponse<byte[]> response = buildClient()
+			HttpResponse<byte[]> response = getClient()
 					.sendAsync(request, HttpResponse.BodyHandlers.ofByteArray())
 					.join();
 			int statusCode = response.statusCode();
@@ -154,7 +173,7 @@ public class JavaHttpClient {
 					.GET()
 					.build();
 			FileBodyHandler responseBodyHandler = new FileBodyHandler(file, uri, callback);
-			HttpResponse<Void> response = buildClient()
+			HttpResponse<Void> response = getClient()
 					.sendAsync(request, responseBodyHandler)
 					.join();
 			int statusCode = response.statusCode();
@@ -179,7 +198,7 @@ public class JavaHttpClient {
 					.headers("Content-Type", "text/plain;charset=UTF-8")
 					.GET()
 					.build();
-			HttpResponse<String> response = buildClient()
+			HttpResponse<String> response = getClient()
 					.sendAsync(request, HttpResponse.BodyHandlers.ofString())
 					.join();
 			int statusCode = response.statusCode();
@@ -199,7 +218,7 @@ public class JavaHttpClient {
 			HttpRequest request = newHttpRequest(uri)
 					.method("HEAD", HttpRequest.BodyPublishers.noBody())
 					.build();
-			HttpResponse<Void> response = buildClient()
+			HttpResponse<Void> response = getClient()
 					.sendAsync(request, HttpResponse.BodyHandlers.discarding())
 					.join();
 			return response.headers();
@@ -228,7 +247,7 @@ public class JavaHttpClient {
 			HttpRequest request = newHttpRequest(uri)
 					.GET()
 					.build();
-			return buildClient()
+			return getClient()
 					.sendAsync(request, HttpResponse.BodyHandlers.ofInputStream())
 					.join();
 		} catch (IllegalArgumentException ex) {
