@@ -27,7 +27,9 @@ public class YoutubeParser {
 	public static void parseUrl(MediaInfo mediaInfo, String url) {
 		JsonNode youTubeMetadata = getYouTubeMetadata(url);
 		if (youTubeMetadata != null) {
-			LOGGER.trace("YouTube metadata found for URL: {} \n{}", url, youTubeMetadata.toPrettyString());
+			if (LOGGER.isTraceEnabled()) {
+				LOGGER.trace("YouTube metadata found for URL: {} \n{}", url, youTubeMetadata.toPrettyString());
+			}
 			parseFormats(youTubeMetadata, mediaInfo, url);
 		} else {
 			LOGGER.trace("No YouTube metadata found for URL: {}", url);
@@ -85,7 +87,7 @@ public class YoutubeParser {
 			HttpRequest request = HttpRequest.newBuilder()
 				.uri(URI.create(videoUrl))
 				.header("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36")
-				.header("Accept-Language", "de-DE,de;q=0.9,en-US;q=0.8,en;q=0.7")
+				.header("Accept-Language", "en-US,en;q=0.9")
 				.GET()
 				.build();
 

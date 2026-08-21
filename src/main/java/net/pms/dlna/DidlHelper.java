@@ -223,9 +223,6 @@ public class DidlHelper extends DlnaHelper {
 			//an album is dated by its release year, not by when its folder was touched
 			addXMLTagAndAttribute(sb, "dc:date", encodeXML(containerAlbumMetadata.getYear()));
 		} else if (container == null && resource.getLastModified() > 0 && renderer.isSendDateMetadata()) {
-			//only an item may be dated by its file. The modification time of a folder
-			//says nothing about its content, and StoreResourceHelper never reported it
-			//for containers either.
 			addXMLTagAndAttribute(sb, "dc:date", formatDate(new Date(resource.getLastModified())));
 		}
 
@@ -263,8 +260,7 @@ public class DidlHelper extends DlnaHelper {
 			}
 		}
 
-		//an album folder has no MediaInfo of its own, so its album metadata is
-		//reported from the resolved album instead
+		//an album folder has no MediaInfo of its own, so its album metadata is reported from the resolved album instead
 		if (resource instanceof StoreContainer albumContainer && albumContainer.getAlbumMetadata() != null) {
 			AlbumMetadata albumMetadata = albumContainer.getAlbumMetadata();
 			if (StringUtils.isNotBlank(albumMetadata.getAlbum())) {

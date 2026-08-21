@@ -15,12 +15,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * This class is responsible for managing the ResourceRatings table. It holds
- * the user rating (0 - 5 stars) of any kind of store resource : items as well
- * as containers. Ratings are global, there is one rating per resource.
+ * This class is responsible for managing the ResourceRatings table. It holds the user rating (0 - 5 stars) of any kind of store
+ * resource : items as well as containers. Ratings are global, there is one rating per resource.
  *
- * Rows are keyed on a resource key, which is a stable identity of the resource
- * independent of its position in the store tree, see
+ * Rows are keyed on a resource key, which is a stable identity of the resource independent of its position in the store tree, see
  * StoreResource.getRatingKey().
  */
 public final class MediaTableResourceRatings extends MediaTable {
@@ -44,8 +42,7 @@ public final class MediaTableResourceRatings extends MediaTable {
 	public static final int RATING_DISLIKED = 0;
 
 	/**
-	 * OBJECT_TYPE stored for album containers, whatever container class was used
-	 * to browse the album, see GETALBUMOBJECTTYPE().
+	 * OBJECT_TYPE stored for album containers, whatever container class was used to browse the album, see GETALBUMOBJECTTYPE().
 	 */
 	public static final String MUSIC_ALBUM_OBJECT_TYPE = "MusicAlbumFolder";
 
@@ -275,8 +272,6 @@ public final class MediaTableResourceRatings extends MediaTable {
 
 	/**
 	 * Removes the rating of a resource.
-	 *
-	 * @param resourceKey the resource key, see StoreResource.getRatingKey()
 	 */
 	public static void deleteRating(final Connection connection, final String resourceKey) {
 		if (connection == null || resourceKey == null) {
@@ -293,11 +288,6 @@ public final class MediaTableResourceRatings extends MediaTable {
 
 	/**
 	 * Tells whether an album is liked, that means rated with RATING_LIKED.
-	 *
-	 * @param connection the db connection
-	 * @param type the album type, either a MusicBrainz or a Discogs release
-	 * @param ident the release id
-	 * @return true if the album is liked
 	 */
 	public static boolean isAlbumLiked(final Connection connection, final DbIdMediaType type, final String ident) {
 		Integer rating = getRating(connection, type.getResourceKey(ident));
@@ -305,13 +295,7 @@ public final class MediaTableResourceRatings extends MediaTable {
 	}
 
 	/**
-	 * Likes or unlikes an album. Unliking removes the rating instead of storing a
-	 * dislike, to keep the behaviour of the legacy like tables.
-	 *
-	 * @param connection the db connection
-	 * @param type the album type, either a MusicBrainz or a Discogs release
-	 * @param ident the release id
-	 * @param liked true to like the album, false to remove the like
+	 * Likes or unlikes an album. Unliking removes the rating instead of storing a dislike, to keep the behaviour of the legacy like tables.
 	 */
 	public static void setAlbumLiked(final Connection connection, final DbIdMediaType type, final String ident, final boolean liked) {
 		setRating(connection, type.getResourceKey(ident), MUSIC_ALBUM_OBJECT_TYPE, liked ? RATING_LIKED : null);
@@ -319,8 +303,6 @@ public final class MediaTableResourceRatings extends MediaTable {
 
 	/**
 	 * Returns every stored rating. Used to backup ratings.
-	 *
-	 * @return the list of stored ratings, never NULL
 	 */
 	public static List<ResourceRating> getAllRatings(final Connection connection) {
 		List<ResourceRating> result = new ArrayList<>();

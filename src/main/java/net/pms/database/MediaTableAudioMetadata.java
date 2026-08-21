@@ -103,10 +103,8 @@ public class MediaTableAudioMetadata extends MediaTable {
 	private static final String SQL_GET_AUDIO_METADATA_BY_FILEID = SELECT_ALL + FROM + TABLE_NAME + WHERE + COL_FILEID + EQUAL + PARAMETER + LIMIT_1;
 	private static final String SQL_GET_RATING_BY_MBID_TRACK = SELECT + TABLE_COL_RATING + FROM + TABLE_NAME + WHERE + COL_MBID_TRACK + EQUAL + PARAMETER + LIMIT_1;
 	private static final String SQL_GET_RATING_BY_AUDIOTRACK_ID = SELECT + TABLE_COL_RATING + FROM + TABLE_NAME + WHERE + COL_AUDIOTRACK_ID + EQUAL + PARAMETER + LIMIT_1;
-	/**
-	 * Aggregates the audio files directly inside one folder, so a single query can
-	 * tell whether they all belong to the same album.
-	 */
+
+	// Aggregates the audio files directly inside one folder, so a single query can tell whether they all belong to the same album.
 	private static final String SQL_GET_ALBUM_BY_FOLDER =
 		SELECT + "COUNT(*) AS TRACKS" + COMMA +
 			"COUNT(DISTINCT CAST(" + TABLE_COL_MBID_RECORD + " AS VARCHAR)) AS MBID_COUNT" + COMMA +
@@ -352,16 +350,6 @@ public class MediaTableAudioMetadata extends MediaTable {
 
 	/**
 	 * Resolves whether a folder holds exactly one album, and returns its metadata.
-	 *
-	 * Only the audio files directly inside the folder are considered. A folder
-	 * counts as an album when every one of those files carries the same MusicBrainz
-	 * release id, or, when no MusicBrainz id is present, the same Discogs release
-	 * id. This is what lets a folder browsed in the file tree be treated as the
-	 * same album that the media library exposes under its release id.
-	 *
-	 * @param connection the db connection
-	 * @param folderPath the folder, without a trailing separator
-	 * @return the album metadata, or NULL if the folder is not a single album
 	 */
 	public static AlbumMetadata getAlbumMetadataForFolder(final Connection connection, final String folderPath) {
 		if (connection == null || StringUtils.isBlank(folderPath)) {
@@ -436,11 +424,6 @@ public class MediaTableAudioMetadata extends MediaTable {
 
 	/**
 	 * Updates the rating of an audio track.
-	 *
-	 * @param connection the db connection
-	 * @param ratingInStars the rating (0 - 5 stars), or NULL to remove the rating
-	 * @param audiotrackId the audio track id
-	 * @throws SQLException
 	 */
 	public static void updateRatingByAudiotrackId(Connection connection, Integer ratingInStars, Integer audiotrackId) throws SQLException {
 		if (connection == null || audiotrackId == null) {

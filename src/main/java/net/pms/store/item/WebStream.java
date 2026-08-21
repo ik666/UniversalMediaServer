@@ -84,9 +84,6 @@ public class WebStream extends StoreItem {
 			result = getMediaInfo().getThumbnailInputStream();
 		}
 		if (result == null && thumbURL != null) {
-			// Downloaded, decoded and cached by ThumbnailStore, remote URLs per URL and local
-			// files per path, so repeated browses (AudioAddict Events rebuild their items every
-			// time) don't re-fetch and re-decode the full-size image on a request thread.
 			result = FileUtil.isUrl(thumbURL) ? ThumbnailStore.getThumbnailInputStreamForUrl(thumbURL) : ThumbnailStore.getThumbnailInputStreamForFile(new File(thumbURL));
 		}
 		return result != null ? result : super.getThumbnailInputStream();

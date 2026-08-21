@@ -279,39 +279,8 @@ public class ThumbnailStore {
 	}
 
 	/**
-	 * Deletes all cached thumbnails, both from this in-memory store and from the database (also
-	 * clearing the references to them from the FILES and TV_SERIES tables), so thumbnails are
-	 * regenerated on demand.
-	 */
-	public static void deleteAll() {
-		synchronized (STORE) {
-			STORE.clear();
-			// the ids these remember are about to be deleted
-			URL_THUMBNAIL_IDS.clear();
-			FILE_THUMBNAIL_IDS.clear();
-			TRANSCODED_THUMBNAILS.clear();
-			Connection connection = null;
-			try {
-				connection = MediaDatabase.getConnectionIfAvailable();
-				if (connection != null) {
-					MediaTableThumbnails.deleteAll(connection);
-				}
-			} finally {
-				MediaDatabase.close(connection);
-			}
-		}
-	}
-
-	/**
 	 * Returns a thumbnail for a remote image URL, generating it on first use and reusing it
-	 * afterwards. The decoded thumbnail is stored (DB-backed) and remembered per URL, so callers
-	 * whose items are rebuilt on every browse (e.g. AudioAddict Events / show folders) do not
-	 * re-download and re-decode the full-size image on a request thread &mdash; which for multi-MB
-	 * covers takes seconds and gets aborted by the client under a burst, leaving thumbnails blank.
-	 *
-	 * @param url the remote image URL.
-	 * @return the thumbnail input stream, or {@code null} if it could not be produced.
-	 * @throws IOException on download failure.
+	 * afterwards. The thumbnail is stored (DB-backed) and remembered per URL.
 	 */
 	public static DLNAThumbnailInputStream getThumbnailInputStreamForUrl(String url) throws IOException {
 		if (url == null) {
@@ -410,5 +379,29 @@ public class ThumbnailStore {
 			}
 		}
 		return transcoded;
+	}
+
+	/**
+	 * Deletes all cached thumbnails, both from this in-memory store and from the database (also
+	 * clearing the references to them from the FILES and TV_SERIES tables), so thumbnails are
+	 * regenerated on demand.
+	 */
+	public static void deleteAll() {
+		synchronized (STORE) {
+			STORE.clear();
+			// the ids these remember are about to be deleted
+			URL_THUMBNAIL_IDS.clear();
+			FILE_THUMBNAIL_IDS.clear();
+			TRANSCODED_THUMBNAILS.clear();
+			Connection connection = null;
+			try {
+				connection = MediaDatabase.getConnectionIfAvailable();
+				if (connection != null) {
+					MediaTableThumbnails.deleteAll(connection);
+				}
+			} finally {
+				MediaDatabase.close(connection);
+			}
+		}
 	}
 }

@@ -104,6 +104,7 @@ public class MediaTableFiles extends MediaTable {
 	 * - 45: added lucene column and index
 	 * - 46: implemented new ruid algorithm
 	 * - 47: new ruid algorithm, all RUID are dropped and recalculated on the next scan
+	 * - 48: index on RUID, the rating backup looks files up by it
 	 */
 	private static final int TABLE_VERSION = 48;
 
