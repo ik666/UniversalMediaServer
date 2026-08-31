@@ -426,7 +426,8 @@ public class MediaServerServlet extends MediaServerHttpServlet {
 				if (isHttp10(req)) {
 					resp.setHeader("Expires", getFutureDate() + " GMT");
 				} else {
-					resp.setHeader("Cache-Control", "max-age=86400");
+					// We have ETag support
+					resp.setHeader("Cache-Control", "no-cache");
 				}
 				try {
 					InputStream imageInputStream;
@@ -802,7 +803,8 @@ public class MediaServerServlet extends MediaServerHttpServlet {
 		if (isHttp10(req)) {
 			resp.setHeader("Expires", getFutureDate() + " GMT");
 		} else {
-			resp.setHeader("Cache-Control", "max-age=86400");
+			// We have ETag support
+			resp.setHeader("Cache-Control", "no-cache");
 		}
 
 		DLNAThumbnailInputStream thumbInputStream;
@@ -872,7 +874,7 @@ public class MediaServerServlet extends MediaServerHttpServlet {
 			if (isHttp10(req)) {
 				resp.setHeader("Expires", getFutureDate() + " GMT");
 			} else {
-				resp.setHeader("Cache-Control", "max-age=86400");
+				resp.setHeader("Cache-Control", "no-cache");
 			}
 			MediaSubtitle sub = item.getMediaSubtitle();
 			if (sub != null) {
