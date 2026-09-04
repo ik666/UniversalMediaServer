@@ -4113,6 +4113,106 @@
 				</plugins>
 			</build>
 		</profile>
+		<!--
+			Slim build for the local Ubuntu Docker container (ik6666/ums), not active by default.
+			`-P ubuntu-x86_64` deactivates every activeByDefault profile (linux-arm64,
+			linux-x86_64, testing), so only this distribution is built and the shared profile
+			section stays identical to main_ums for clean merges.
+			Same ums*.gz as linux-x86_64, but assembly-ubuntu-x86_64.xml omits the bundled JRE:
+			the container brings its own java_25 base image plus ffmpeg / tsMuxeR.
+		-->
+		<profile>
+			<id>ubuntu-x86_64</id>
+			<build>
+				<plugins>
+					<plugin>
+						<groupId>com.github.eirslett</groupId>
+						<artifactId>frontend-maven-plugin</artifactId>
+						<executions>
+							<execution>
+								<id>install node and corepack</id>
+								<goals>
+									<goal>install-node-and-corepack</goal>
+								</goals>
+							</execution>
+							<!-- download Node.js dependencies -->
+							<execution>
+								<id>yarn install</id>
+								<goals>
+									<goal>corepack</goal>
+								</goals>
+								<configuration>
+									<arguments>yarn install</arguments>
+								</configuration>
+							</execution>
+							<!-- compile the react client to the web directory -->
+							<execution>
+								<id>yarn build</id>
+								<goals>
+									<goal>corepack</goal>
+								</goals>
+								<configuration>
+									<arguments>yarn build</arguments>
+								</configuration>
+							</execution>
+						</executions>
+					</plugin>
+					<plugin>
+						<artifactId>maven-assembly-plugin</artifactId>
+						<version>${maven-assembly-plugin-version}</version>
+						<executions>
+							<!-- Assemble a jar with dependencies -->
+							<execution>
+								<id>make-jar-with-dependencies</id>
+								<phase>package</phase>
+								<goals>
+									<goal>single</goal>
+								</goals>
+								<configuration>
+									<descriptors>
+										<descriptor>${project.basedir}/src/main/assembly/jar-with-dependencies.xml</descriptor>
+									</descriptors>
+									<archive>
+										<manifest>
+											<mainClass>${project.mainclass}</mainClass>
+											<addDefaultImplementationEntries>true</addDefaultImplementationEntries>
+										</manifest>
+										<manifestEntries>
+											<!-- Preserve Lucene's Multi-Release JAR so java.lang.foreign providers (e.g. MemorySegmentIndexInputProvider) are found on JDK 21+ inside the fat jar. -->
+											<Multi-Release>true</Multi-Release>
+										</manifestEntries>
+									</archive>
+								</configuration>
+							</execution>
+
+							<!-- Assemble the slim x86_64 distribution file (no bundled JRE). -->
+							<execution>
+								<id>build-ums-ubuntu-x86_64</id>
+								<phase>package</phase>
+								<goals>
+									<goal>single</goal>
+								</goals>
+								<configuration>
+									<descriptors>
+										<descriptor>${project.basedir}/src/main/assembly/assembly-ubuntu-x86_64.xml</descriptor>
+									</descriptors>
+									<archive>
+										<manifest>
+											<mainClass>${project.mainclass}</mainClass>
+											<addDefaultImplementationEntries>true</addDefaultImplementationEntries>
+										</manifest>
+										<manifestEntries>
+											<!-- Preserve Lucene's Multi-Release JAR so java.lang.foreign providers (e.g. MemorySegmentIndexInputProvider) are found on JDK 21+ inside the fat jar. -->
+											<Multi-Release>true</Multi-Release>
+										</manifestEntries>
+									</archive>
+								</configuration>
+							</execution>
+						</executions>
+					</plugin>
+				</plugins>
+			</build>
+		</profile>
 	</profiles>
 </project>
 
