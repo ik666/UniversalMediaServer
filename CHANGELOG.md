@@ -5,6 +5,7 @@
 ### General
 - Improved support for 3D videos (thanks, Daniel Ramos!)
 - Fixed a media scanner crash while hashing files
+- Fixed copying web streams between M3U playlists via UPnP, preserving their title and playlist metadata
 - Fixed FFmpeg on macOS pre-10.15 (#6388) (thanks, @elektronen!)
 - Fixed file compatibility on some media players
 - Increased validation of dependency downloads
@@ -17,6 +18,7 @@
 - Bump `axios` from 1.20.0 to 1.21.0
 - Bump `follow-redirects` from 1.16.1 to 1.16.2 ([#6447](https://github.com/UniversalMediaServer/UniversalMediaServer/pull/6447))
 - Bump `typescript-eslint` from 8.71.1 to 8.72.1 ([#6449](https://github.com/UniversalMediaServer/UniversalMediaServer/pull/6449))
+- Bump `typescript-eslint` from 8.72.1 to 8.72.2 ([#6486](https://github.com/UniversalMediaServer/UniversalMediaServer/pull/6486))
 
 ## [16.0.0-b1](https://github.com/UniversalMediaServer/UniversalMediaServer/compare/15.10.0...16.0.0-b1) (2026-11-14)
 
